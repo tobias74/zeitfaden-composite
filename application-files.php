@@ -47,8 +47,21 @@ spl_autoload_register(function ($sClass) use ($baseDir) {
 });
 */
 
+spl_autoload_register(function($class) use ($baseDir){
+
+  $fileName = $baseDir.'/../frameworks/Elastica/lib/' . str_replace('\\',DIRECTORY_SEPARATOR,$class) . '.php';
+  if (file_exists($fileName)) 
+  {
+    require_once($fileName);
+  }
+
+});
 
 
+
+require_once($baseDir.'/../my-frameworks/php-visitable-specification/src/php-visitable-specification.php');
+require_once($baseDir.'/../my-frameworks/simple-parser-base/src/simple-parser-base.php');
+require_once($baseDir.'/../my-frameworks/php-query-language/src/php-query-language.php');
 
 require_once($baseDir.'/../my-frameworks/sugarloaf/lib/sugarloaf.php');
 require_once($baseDir.'/../my-frameworks/tiro-php-profiler/src/tiro.php');

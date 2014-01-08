@@ -10,7 +10,117 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
       $uid.=rand(100000,999999);
       return $uid;
   }
+
+
+  public function getImageAction()
+  {
+    
+    $imageSize = $this->_request->getParam('imageSize','medium');
+
+    $entityId = $this->_request->getParam($this->idName,0);
+    $entityData = $this->getEntityDataByRequest($this->_request);
+    
+
+    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
+    
+    $flyUrl = 'http://flyservice.butterfurz.de/image/getFlyImageId/imageSize/'.$imageSize.'?imageUrl='.$serveAttachmentUrl;
+    
+    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
+    $r->send();
+    
+    $values = json_decode($r->getResponseBody(),true);
+    
+    $this->sendGridFile($values);    
+  }
+
+  public function getVideoAction()
+  {
+    $format = $this->_request->getParam('format','webm');
+
+    $entityId = $this->_request->getParam($this->idName,0);
+    $entityData = $this->getEntityDataByRequest($$this->_request);
+
+    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
+    $flyUrl = 'http://flyservice.butterfurz.de/video/getFlyVideoId/format/'.$format.'?videoUrl='.$serveAttachmentUrl;
+    
+    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+    
+    $this->sendGridFile($values);    
+    
+  }
+
   
+  protected function attachLoadBalancedUrls($returnEntities)
+  {
+    $frontEndUrls = $this->getCompositeService()->getFrontEndUrls();
+
+    foreach($returnEntities as &$entity)
+     {
+         if (isset($entity['smallFrontImageUrl']))
+         {
+           $relativeUrl = $entity['smallFrontImageUrl'];
+           $frontEndNumber = (crc32($relativeUrl) % 4);
+           $frontEndUrl = $frontEndUrls[$frontEndNumber];
+           $entity['smallFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['smallFrontImageUrl'];
+           $entity['mediumFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['mediumFrontImageUrl'];
+           $entity['bigFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['bigFrontImageUrl'];
+         }
+
+     }
+    
+    return $returnEntities;
+  }
+
+  protected function sortEntitiesByQuery($returnEntities, $values)
+  {
+    $sortDirection = $values['sortDirection'];
+    $sortField = $values['sortField'];
+    $limit = $values['limit'];
+    
+    // hier noch die eintraege sortieren.
+    $band = array();
+    $auflage = array();
+    
+    if ($sortField != false)
+    {
+      foreach ($returnEntities as $key => $row) 
+      {
+          $band[$key]    = $row['id'];
+          $auflage[$key] = $row[$sortField];
+      }
+      if ($sortDirection == 'ASC')
+      {
+        array_multisort($band, SORT_ASC, $auflage, SORT_ASC, $returnEntities);
+      }
+      else if ($sortDirection == 'DESC')
+      {
+        array_multisort($band, SORT_ASC, $auflage, SORT_DESC, $returnEntities);
+      }
+      else
+      {
+        throw new \ErrorException('why no direction?');
+      }
+    }
+    else
+    {
+      foreach ($returnEntities as $key => $row) 
+      {
+          $band[$key]    = $row['id'];
+      }
+      array_multisort($band, SORT_ASC, $returnEntities);
+    }      
+          
+        
+    
+    $returnEntities = array_slice($returnEntities,0,$limit);
+    
+    return $returnEntities;
+    
+  }
+
 
   public function setApplicationId($val)
   {
@@ -112,6 +222,13 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     $request->send();
     $values = json_decode($request->getResponseBody(),true);
 
+    if (!is_array($values))
+    {
+      error_log($request->getResponseBody());
+      throw new \ErrorException('shard responed with error.');  
+    }
+    
+    
     foreach ($values as $name => $value)
     {
       $this->_response->appendValue($name,$value);
@@ -121,7 +238,18 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
     foreach ($r->getResponseHeader() as $header)
     {
-      $this->_response->addHeader($header); 
+      if (is_array($header))
+      {
+        foreach($header as $h)
+        {
+          error_log('adding array header '. $h);
+          $this->_response->addHeader($h); 
+        }
+      }
+      else
+      {
+        $this->_response->addHeader($header); 
+      }
     }
 
     foreach ($r->getResponseCookies() as $cookie)
@@ -164,7 +292,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   protected function getStationDataById($stationId, $userId)
   {
     $shardData = $this->getShardByUserId($userId);
-    $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId.'/applicationId/'.$this->getApplicationId();
+    $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId;
     
     //echo $url;
     
@@ -175,6 +303,27 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     $values = json_decode($r->getResponseBody(),true);
     
     $returnValues = $values['station'];
+    
+    $returnValues['shardUrl'] = $shardData['shardUrl'];
+
+    return $returnValues;
+  
+  }
+
+  protected function getUserDataById($userId)
+  {
+    $shardData = $this->getShardByUserId($userId);
+    $url = 'http://'.$shardData['shardUrl'].'/user/getById/userId/'.$userId;
+    
+    //echo $url;
+    
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addCookies($_COOKIE);
+    
+    $r->send();
+    $values = json_decode($r->getResponseBody(),true);
+    
+    $returnValues = $values['user'];
     
     $returnValues['shardUrl'] = $shardData['shardUrl'];
 

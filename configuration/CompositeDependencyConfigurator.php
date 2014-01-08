@@ -24,6 +24,10 @@ class CompositeDependencyConfigurator
 		
     
     
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchService','\Zeitfaden\ElasticSearch\ElasticSearchService'));
+    $depList->addDependency('Application', new SL\UnmanagedInstance($application));
+        
+    
 		$parameterArray = new SL\ParameterArray();
     $parameter = new SL\ManagedParameter('DatabaseProvider');
     $parameterArray->appendParameter($parameter);
@@ -45,8 +49,8 @@ class CompositeDependencyConfigurator
         $depList->addDependency('CompositeService', new SL\ManagedComponent('CompositeService'));
         $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
         $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
-		//$depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
-				
+        $depList->addDependency('ElasticSearchService', new SL\ManagedComponent('ElasticSearchService'));
+						
 
 
 

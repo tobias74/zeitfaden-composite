@@ -2,6 +2,9 @@
 
 class StationController extends AbstractCompositeController
 {
+  protected $idName = 'stationId';
+  protected $controllerPath='station';
+
 	protected function declareActionsThatNeedLogin()
 	{
 		return array(
@@ -11,58 +14,27 @@ class StationController extends AbstractCompositeController
 			);
 	}
 
-
-
-  public function getImageAction()
+  protected function getEntityDataByRequest($request)
   {
-    
-    $userId = $this->_request->getParam('userId',0);
-    $stationId = $this->_request->getParam('stationId',0);
-    $imageSize = $this->_request->getParam('imageSize','medium');
-
+    $userId = $request->getParam('userId',0);
+    $stationId = $request->getParam('stationId',0);
     $stationData = $this->getStationDataById($stationId, $userId);
-    
+    return $stationData;
 
-    $serveAttachmentUrl = 'http://'.$stationData['shardUrl'].'/station/serveAttachment/userId/'.$userId.'/stationId/'.$stationId;
-    
-    $flyUrl = 'http://flyservice.butterfurz.de/image/getFlyImageId/imageSize/'.$imageSize.'?imageUrl='.$serveAttachmentUrl;
-    
-    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-    $r->send();
-    
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $this->sendGridFile($values);    
   }
 
 
 
 
-  public function getVideoAction()
-  {
-    $userId = $this->_request->getParam('userId',0);
-    $stationId = $this->_request->getParam('stationId',0);
-    $format = $this->_request->getParam('format','webm');
 
-    $stationData = $this->getStationDataById($stationId, $userId);
 
-    $serveAttachmentUrl = 'http://'.$stationData['shardUrl'].'/station/serveAttachment/userId/'.$userId.'/stationId/'.$stationId;
-    $flyUrl = 'http://flyservice.butterfurz.de/video/getFlyVideoId/format/'.$format.'?videoUrl='.$serveAttachmentUrl;
-    
-    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-    $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $this->sendGridFile($values);    
-    
-  }
 
 	
 		
 	public function getByIdAction()
 	{
-    $this->passToMyShard();
+	  // not quite... which shard has this id?
+    //$this->passToMyShard();
 	}
 
   public function createAction()
@@ -87,7 +59,28 @@ class StationController extends AbstractCompositeController
   
 
 
+  
+  protected function sortStationsByElasticSearch($entities, $responseArray)
+  {
+    return $entities;
+  }
 
+
+  protected function getStationIdsFromElasticResponse($responseArray)
+  {
+    if (!isset($responseArray['hits']['hits']))
+    {
+      return array();
+    }
+    $hits = $responseArray['hits']['hits'];
+    $ids = array();
+    foreach ($hits as $hit)
+    {
+      $ids[] = $hit['_id'];
+    }
+    
+    return $ids;
+  }
 
 
 
@@ -95,6 +88,8 @@ class StationController extends AbstractCompositeController
   public function getByQueryAction()
   {
     $query = $this->_request->getParam('query', 'missing query');
+
+    $useEngine = $this->_request->getParam('useEngine', 'native');
     
     $url = 'http://query-interpreter.zeitfaden.com/query/translateQuery/query/'.urlencode($query);
     $r = new HttpRequest($url, HttpRequest::METH_GET);
@@ -102,86 +97,87 @@ class StationController extends AbstractCompositeController
 
     $values = json_decode($r->getResponseBody(),true);
     
-    $sortDirection = $values['sortDirection'];
-    $sortField = $values['sortField'];
-    
-    $limit = $values['limit'];
-
-    $nodes = $this->getCompositeService()->getSubNodes();
-
-    $returnEntities = array();
-    
-    foreach ($nodes as $node)
+    switch ($useEngine)
     {
-      $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNode($node,$query));
-    }
-    
-
-
-
-    // hier noch die eintraege sortieren.
-    $band = array();
-    $auflage = array();
-    
-    if ($sortField != false)
-    {
-      error_log('going int for the psciala sorrtinesdfkjjhkj applying special sort');
-      foreach ($returnEntities as $key => $row) 
-      {
-          $band[$key]    = $row['id'];
-          $auflage[$key] = $row[$sortField];
-      }
-      if ($sortDirection == 'ASC')
-      {
-        array_multisort($band, SORT_ASC, $auflage, SORT_ASC, $returnEntities);
-      }
-      else if ($sortDirection == 'DESC')
-      {
-        array_multisort($band, SORT_ASC, $auflage, SORT_DESC, $returnEntities);
-      }
-      else
-      {
-        throw new \ErrorException('why no direction?');
-      }
-    }
-    else
-    {
-      error_log('not applying special sort');
-      foreach ($returnEntities as $key => $row) 
-      {
-          $band[$key]    = $row['id'];
-      }
-      array_multisort($band, SORT_ASC, $returnEntities);
-    }      
-          
+      case 'elastic':
         
+        $potteryQueryString = $values['potteryQuery'];
+  
+        $queryEngine = new \PhpQueryLanguage\QueryEngine();
+        $stationQuery = $queryEngine->translateQuery($potteryQueryString);
+        
+        
+        $spec = $stationQuery->getSpecification();
+  
+        if ($spec->hasCriteria())
+        {
+          $whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
+          $spec->getCriteria()->acceptVisitor($whereArrayMaker);
+          $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
+          error_log(json_encode($filter));
+        }
+        else 
+        {
+          $filter=array();  
+        }
+  
+        $responseArray = $this->getElasticSearchService()->performQuery($filter);
+        
+        $stationsIds = $this->getStationIdsFromElasticResponse($responseArray);
+  
+  
+        $nodes = $this->getCompositeService()->getSubNodes();
+        $returnEntities = array();
+        foreach ($nodes as $node)
+        {
+          $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByIds($node,$stationsIds));
+        }
+  
+        $returnEntities = $this->sortStationsByElasticSearch($returnEntities, $responseArray);
+        
+        break;
+
+      default:      
+
+        $nodes = $this->getCompositeService()->getSubNodes();
     
-    $returnEntities = array_slice($returnEntities,0,$limit);
+        $returnEntities = array();
+        
+        foreach ($nodes as $node)
+        {
+          $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByQuery($node,$query));
+        }
+    
+        $returnEntities = $this->sortEntitiesByQuery($returnEntities, $values);
+        
+        break;
+    }   
+    
 
-    $frontEndUrls = $this->getCompositeService()->getFrontEndUrls();
-
-    foreach($returnEntities as &$entity)
-     {
-         if (isset($entity['smallFrontImageUrl']))
-         {
-           $relativeUrl = $entity['smallFrontImageUrl'];
-           $frontEndNumber = (crc32($relativeUrl) % 4);
-           $frontEndUrl = $frontEndUrls[$frontEndNumber];
-           $entity['smallFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['smallFrontImageUrl'];
-           $entity['mediumFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['mediumFrontImageUrl'];
-           $entity['bigFrontImageUrl'] = 'http://'.$frontEndUrl.$entity['bigFrontImageUrl'];
-         }
-
-     }
-
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
     
     $this->_response->setHash(array_values($returnEntities));
-    
-    
   }
 
 
-  protected function getEntitiesOfNode($node,$query)
+
+
+  protected function getEntitiesOfNodeByIds($node,$ids)
+  {
+    $url = $node.'/station/getByIds/';
+    //die($url);
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addQueryData(array('stationIds' => $ids));
+    $r->addCookies($_COOKIE);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+    
+    return $values;
+  }
+
+
+  protected function getEntitiesOfNodeByQuery($node,$query)
   {
     $url = $node.'/getStationsByQuery/'.urlencode($query);
     //die($url);

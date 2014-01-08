@@ -1,12 +1,6 @@
 <?php 
 class UserController extends AbstractCompositeController
 {
-	protected function declareActionsThatNeedLogin()
-	{
-		return array(
-			'setNickname'
-		);
-	}
 	
   
   	protected function facebookIntroducer_Only_For_Main_Node()
@@ -40,6 +34,15 @@ class UserController extends AbstractCompositeController
         $userSession = new AnonymousUserSession();
       }
     }
+
+
+  protected function getEntityDataByRequest($request)
+  {
+    $userId = $request->getParam('userId',0);
+    $userData = $this->getUserDataById($userId);
+    return $userData;
+
+  }
 
 
   public function showExportAction()
@@ -435,46 +438,75 @@ class UserController extends AbstractCompositeController
 	
 	
 	
+
   public function getByQueryAction()
   {
     $query = $this->_request->getParam('query', 'missing query');
-    // this query works with the base query-engine of brokenpottery 
 
-    //$query = "get reverse chronological stations (at latitude 5.555 and longitude 6 within 7000 miles or at latitude 5 and longitude 6 within 7000 miles) from '1990-01-01' until '2014-01-01'"; // at latitude '2' and longitude '48' within 5 miles";
-    //$query = "get stations from '1990-01-01' until '2012-01-01' assigned to group 'e54abc334456'"; // at latitude '2' and longitude '48' within 5 miles";
-    //$query = "get stations from '1990-01-01' until '2012-01-01' "; // at latitude '2' and longitude '48' within 5 miles";
-    //$query = "get stations from '1990-01-01' until '2012-01-01' at latitude '2' and longitude '48' within 5 miles ";
-    //$query = "get chronological stations at latitude 5.555 and longitude 6 within 7000 miles";
-    //$query = "get 100,2 live stations";
-                    
-    //$potteryQuery = "get 777 stations at offset 4 where (@startLatitude is greater than or equal to '2' and @startLatitude is greater than '48') or @startLatitude is greater than '2' sorted by descending @startLatitude ";
-    //$potteryQuery = "get 777 stations ";
-    //$potteryQuery = "get stations ";
-            
-    //$stations = $this->getQueryEngine()->getDatabaseQueryEngine()->query($potteryQuery);
-    
+    $useEngine = $this->_request->getParam('useEngine', 'native');
     
     $url = 'http://query-interpreter.zeitfaden.com/query/translateQuery/query/'.urlencode($query);
     $r = new HttpRequest($url, HttpRequest::METH_GET);
     $r->send();
-	
-	  $values = json_decode($r->getResponseBody(),true);
-    $potteryQueryString = $values['potteryQuery'];
-		   
-									
-		
-		$queryEngine = $this->getQueryEngine();
-		$userQuery = $queryEngine->translateQuery($potteryQueryString);
-		
-    $userSpecification = $userQuery->getSpecification();
-    $users = $this->getEntityAccessProxy()->getUsersBySpecification($userSpecification);
+
+    $values = json_decode($r->getResponseBody(),true);
     
-    $userDTOs = $this->getDtoAccessProxy()->getUserDTOs($users);
+    switch ($useEngine)
+    {
+      case 'elastic':
+        throw new ErrorException('not impleeted yet elastic user search');        
+        break;
+
+      default:      
+
+        $nodes = $this->getCompositeService()->getSubNodes();
+    
+        $returnEntities = array();
         
-    $this->_response->setHash(array_values($userDTOs));
+        foreach ($nodes as $node)
+        {
+          $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByQuery($node,$query));
+        }
     
+        $returnEntities = $this->sortEntitiesByQuery($returnEntities, $values);
+        
+        break;
+    }   
+    
+
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    
+    $this->_response->setHash(array_values($returnEntities));
   }
-		
+
+
+  protected function getEntitiesOfNodeByIds($node,$ids)
+  {
+    $url = $node.'/user/getByIds/';
+    //die($url);
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addQueryData(array('userIds' => $ids));
+    $r->addCookies($_COOKIE);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+    
+    return $values;
+  }
+
+
+  protected function getEntitiesOfNodeByQuery($node,$query)
+  {
+    $url = $node.'/getUsersByQuery/'.urlencode($query);
+    //die($url);
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addCookies($_COOKIE);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+    
+    return $values;
+  }
 
 	
 	
