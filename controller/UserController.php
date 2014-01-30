@@ -157,6 +157,14 @@ class UserController extends AbstractCompositeController
 	}
 	
 	
+  public function loginStatusAction()
+  {
+      $this->_response->appendValue('loggedInUserId', $this->getUserSession()->getLoggedInUserId());
+    
+  }
+
+  
+  
 	public function loginAction()
 	{
 		$email = $this->_request->getParam('email', '');
@@ -198,23 +206,6 @@ class UserController extends AbstractCompositeController
 	}
 	
 	
-  public function getImageAction()
-  {
-    
-    $userId = $this->_request->getParam('userId',0);
-    $imageSize = $this->_request->getParam('imageSize','medium');
-    $entity = $this->getService()->getUserById($userId);
-    
-    $serveAttachmentUrl = 'http://'.$_SERVER['SERVER_NAME'].'/user/serveAttachment/userId/'.$userId;
-    $flyUrl = 'http://flyservice.butterfurz.de/image/getFlyImageId/imageSize/'.$imageSize.'?imageUrl='.$serveAttachmentUrl;
-    
-    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-    $r->send();
-    
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $this->sendGridFile($values);    
-  }
 
 
   protected function isEmailRegistered($email)

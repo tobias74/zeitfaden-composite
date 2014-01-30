@@ -37,6 +37,15 @@ class CompositeServiceFacade
     return $this->applicationIni['front_end_urls'];
   }
 
+
+
+  public function getRandomSubNode()
+  {
+    $nodes = $this->getSubNodes();
+    $random = mt_rand(0, count($nodes)-1);
+    return $nodes[$random];
+  }
+  
 	protected function prepareUrls($commandPath)
 	{
 	  $preparedUrls = array();

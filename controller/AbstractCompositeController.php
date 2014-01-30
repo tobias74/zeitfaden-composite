@@ -93,11 +93,13 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
       }
       if ($sortDirection == 'ASC')
       {
-        array_multisort($band, SORT_ASC, $auflage, SORT_ASC, $returnEntities);
+        //array_multisort($band, SORT_ASC, $auflage, SORT_ASC, $returnEntities);
+        array_multisort($auflage, SORT_ASC, $band, SORT_ASC, $returnEntities);
       }
       else if ($sortDirection == 'DESC')
       {
-        array_multisort($band, SORT_ASC, $auflage, SORT_DESC, $returnEntities);
+        //array_multisort($band, SORT_ASC, $auflage, SORT_DESC, $returnEntities);
+        array_multisort($auflage, SORT_DESC, $band, SORT_ASC, $returnEntities);
       }
       else
       {
@@ -115,7 +117,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
           
         
     
-    $returnEntities = array_slice($returnEntities,0,$limit);
+    // TODO: Limiting would mean to loose some of the result of some shards.
+    //$returnEntities = array_slice($returnEntities,0,$limit);
     
     return $returnEntities;
     
@@ -170,11 +173,21 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
   protected function getHomeShardUrl()
   {
-    $userId = $this->getUserSession()->getLoggedInUserId();
-    $homeShard = $this->getCompositeService()->whereLivesUserById($userId);
+    if ($this->getUserSession()->isUserLoggedIn())
+    {
+      $userId = $this->getUserSession()->getLoggedInUserId();
+      $homeShard = $this->getCompositeService()->whereLivesUserById($userId);
+  
+      $returnUrl = $homeShard['shardUrl'];
+    }
+    else
+    {
+      $returnUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
+    }
 
-    return $homeShard['shardUrl'];
-
+    error_log('return url from getHomeShardUrl: '.$returnUrl);
+    
+    return $returnUrl;
   }
 
 

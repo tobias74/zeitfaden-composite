@@ -33,8 +33,30 @@ class StationController extends AbstractCompositeController
 		
 	public function getByIdAction()
 	{
-	  // not quite... which shard has this id?
-    //$this->passToMyShard();
+      $stationId = $this->_request->getParam('stationId',0);
+      $nodes = $this->getCompositeService()->getSubNodes();
+    
+      $returnEntities = array();
+      foreach ($nodes as $node)
+      {
+        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeById($node,$stationId));
+      }
+        
+      if (count($returnEntities) > 1)
+      {
+        throw new \ErrorException('found too many.');
+      }
+      else if (count($returnEntities) === 0)
+      {
+        $this->_response->addHeader('HTTP/1.0 404 Not Found');
+      }
+      else 
+      {
+        $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+        $entityData = $returnEntities[0];
+        $this->_response->setHash($entityData);
+      }
+    
 	}
 
   public function createAction()
@@ -161,7 +183,7 @@ class StationController extends AbstractCompositeController
 
 
 
-
+/*
   protected function getEntitiesOfNodeByIds($node,$ids)
   {
     $url = $node.'/station/getByIds/';
@@ -170,10 +192,40 @@ class StationController extends AbstractCompositeController
     $r->addQueryData(array('stationIds' => $ids));
     $r->addCookies($_COOKIE);
     $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
     
-    return $values;
+    error_log('we have code '.$r->getResponseCode());
+    if ($r->getResponseCode() == 404)
+    {
+      return array();
+    }
+    else
+    {
+      $values = json_decode($r->getResponseBody(),true);
+      return $values;
+    }
+    
+  }
+*/
+
+
+  protected function getEntitiesOfNodeById($node,$id)
+  {
+    $url = $node.'/station/getById/';
+    //die($url);
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addQueryData(array('stationId' => $id));
+    $r->addCookies($_COOKIE);
+    $r->send();
+
+    if ($r->getResponseCode() == 404)
+    {
+      return array();
+    }
+    else
+    {
+      $values = json_decode($r->getResponseBody(),true);
+      return array($values);
+    }
   }
 
 
