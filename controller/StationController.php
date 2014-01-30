@@ -29,33 +29,24 @@ class StationController extends AbstractCompositeController
 
 
 
+  
+
+
+
 	
 		
 	public function getByIdAction()
 	{
-      $stationId = $this->_request->getParam('stationId',0);
-      $nodes = $this->getCompositeService()->getSubNodes();
-    
-      $returnEntities = array();
-      foreach ($nodes as $node)
-      {
-        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeById($node,$stationId));
-      }
-        
-      if (count($returnEntities) > 1)
-      {
-        throw new \ErrorException('found too many.');
-      }
-      else if (count($returnEntities) === 0)
-      {
-        $this->_response->addHeader('HTTP/1.0 404 Not Found');
-      }
-      else 
-      {
-        $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-        $entityData = $returnEntities[0];
-        $this->_response->setHash($entityData);
-      }
+    try
+    {
+      $entityData = $this->getEntityDataByRequest($this->_request);      
+      $returnEntities = $this->attachLoadBalancedUrls(array($entityData));
+      $this->_response->setHash($returnEntities[0]);
+    }
+    catch (ZeitfadenNoMatchException $e)
+    {
+      $this->_response->addHeader('HTTP/1.0 404 Not Found');
+    }
     
 	}
 
@@ -224,6 +215,8 @@ class StationController extends AbstractCompositeController
     else
     {
       $values = json_decode($r->getResponseBody(),true);
+      $values['shardUrl'] = substr($node,7);
+      
       return array($values);
     }
   }

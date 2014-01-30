@@ -279,7 +279,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
   protected function getShardByUserId($userId)
   {
-    $values = $this->getShardingService()->getSHardDataByUserId($userId);
+    $values = $this->getShardingService()->getShardDataByUserId($userId);
     if ($values['status'] == 'not_found')
     {
       error_log('userid '.$userId.' was not found in the shardmaster, brute forcing it now...');
@@ -302,26 +302,65 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
   
   
-  protected function getStationDataById($stationId, $userId)
+  protected function getStationDataById($stationId, $userId = false)
   {
-    $shardData = $this->getShardByUserId($userId);
-    $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId;
+    if ($userId != false)
+    {
+      $shardData = $this->getShardByUserId($userId);
+      $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId;
+      
+      $r = new HttpRequest($url, HttpRequest::METH_GET);
+      $r->addCookies($_COOKIE);
+      $r->send();
+      $values = json_decode($r->getResponseBody(),true);
+      
+      $returnValues = $values;
+      
+      $returnValues['shardUrl'] = $shardData['shardUrl'];
+  
+      return $returnValues;
+      
+    }
+    else 
+    {
+      $nodes = $this->getCompositeService()->getSubNodes();
     
-    //echo $url;
-    
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->addCookies($_COOKIE);
-    
-    $r->send();
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $returnValues = $values['station'];
-    
-    $returnValues['shardUrl'] = $shardData['shardUrl'];
+      $returnEntities = array();
+      foreach ($nodes as $node)
+      {
+        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeById($node,$stationId));
+      }
+        
+      if (count($returnEntities) > 1)
+      {
+        throw new \ErrorException('found too many.');
+      }
+      else if (count($returnEntities) === 0)
+      {
+        throw new ZeitfadenNoMatchException();
+      }
+      else 
+      {
+        $entityData = $returnEntities[0];
+        return $entityData;
+      }
+      
+    }
 
-    return $returnValues;
+
+
+
+
+    
   
   }
+
+
+  
+
+
+
+
 
   protected function getUserDataById($userId)
   {
