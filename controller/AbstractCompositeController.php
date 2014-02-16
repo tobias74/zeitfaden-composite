@@ -265,8 +265,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     else
     {
       return array(
-        'shardId' => $values['shard']['url'],
-        'shardUrl' => $values['shard']['shardId']
+        'shardId' => $values['shard']['shardId'],
+        'shardUrl' => $values['shard']['url']
       );
   
     }
