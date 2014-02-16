@@ -12,45 +12,17 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
-  public function getImageAction()
+
+  protected function getAttachmentUrlByRequest($request)
   {
-    
-    $imageSize = $this->_request->getParam('imageSize','medium');
-
-    $entityId = $this->_request->getParam($this->idName,0);
-    $entityData = $this->getEntityDataByRequest($this->_request);
-    
-
+    $entityId = $request->getParam($this->idName,0);
+    $entityData = $this->getEntityDataByRequest($request);
     $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
-    
-    $flyUrl = 'http://flyservice.butterfurz.de/image/getFlyImageId/imageSize/'.$imageSize.'?imageUrl='.$serveAttachmentUrl;
-    
-    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-    $r->send();
-    
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $this->sendGridFile($values);    
+    return $serveAttachmentUrl;
   }
 
-  public function getVideoAction()
-  {
-    $format = $this->_request->getParam('format','webm');
 
-    $entityId = $this->_request->getParam($this->idName,0);
-    $entityData = $this->getEntityDataByRequest($$this->_request);
 
-    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
-    $flyUrl = 'http://flyservice.butterfurz.de/video/getFlyVideoId/format/'.$format.'?videoUrl='.$serveAttachmentUrl;
-    
-    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-    $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
-    
-    $this->sendGridFile($values);    
-    
-  }
 
   
   protected function attachLoadBalancedUrls($returnEntities)
