@@ -71,7 +71,6 @@ class StationController extends AbstractCompositeController
  	}
   
 
-
   
   protected function sortStationsByElasticSearch($entities, $responseArray)
   {
@@ -96,6 +95,24 @@ class StationController extends AbstractCompositeController
   }
 
 
+
+  public function getAction()
+  {
+    $nodes = $this->getCompositeService()->getSubNodes();
+
+    $returnEntities = array();
+    
+    foreach ($nodes as $node)
+    {
+      $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$this->_request));
+    }
+
+    $returnEntities = $this->sortEntitiesByRequest($returnEntities, $this->_request);
+    
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    
+    $this->_response->setHash(array_values($returnEntities));
+  }
 
 
   public function getByQueryAction()
@@ -235,6 +252,74 @@ class StationController extends AbstractCompositeController
     return $values;
   }
 
+
+
+  protected function getEntitiesOfNodeByRequest($node,$request)
+  {
+    $params = "";
+    foreach ($request->getParams() as $name => $value)
+    {
+      $params.=$name.'/'.urlencode($value).'/';
+    }
+    
+    $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
+    //die($url);
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addCookies($_COOKIE);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+    
+    return $values;
+  }
+
+
+  protected function sortEntitiesByRequest($entities,$request)
+  {
+    $datetime = $request->getParam('datetime',false);
+    $sort = $request->getParam('sort',false);
+    $direction = $request->getParam('direction',false);
+    $lastId = $request->getParam('lastId',false);
+    
+    if ($sort === 'byTime')
+    {
+      if ($direction === 'intoTheFuture')
+      {
+        $sorter = SORT_ASC;
+      }
+      else 
+      {
+        $sorter = SORT_DESC;
+      }
+      
+      if ($lastId)
+      {
+        $sortFieldValues = array();
+        foreach ($entities as $key => &$entityData)
+        {
+          $entityData['syntheticStartDateWithId'] = $entityData['startDate'].'_'.$entityData['id'];
+          $sortFieldValues[$key] = $entityData['syntheticStartDateWithId'];
+        }  
+        array_multisort($sortFieldValues, $sorter, $entities);
+      }
+      else 
+      {
+        $sortFieldValues = array();
+        foreach ($entities as $key => &$entityData)
+        {
+          $sortFieldValues[$key] = $entityData['startDate'];
+        }  
+        array_multisort($sortFieldValues, $sorter, $entities);
+      }
+    }
+    else 
+    {
+      throw new WrongRequestException();
+    }
+    
+    
+    return $entities;
+  }
 
 
 }
