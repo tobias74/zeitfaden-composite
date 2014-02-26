@@ -167,8 +167,16 @@ class UserController extends AbstractCompositeController
   
 	public function loginAction()
 	{
+    $rest_json = file_get_contents("php://input");
+    $_input = json_decode($rest_json, true);	  
+
 		$email = $this->_request->getParam('email', '');
 		$password = $this->_request->getParam('password','');
+
+		if ($email === '') {$email = $_input['email'];}
+    if ($password === '') {$password = $_input['password'];}
+    
+		
 		$response = $this->getCompositeService()->whereLivesUserByEmail($email);
 		// now we know whre the user live, now we log him into that.
 		// the session will be updated there and be valid here, too.
