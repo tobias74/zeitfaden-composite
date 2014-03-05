@@ -182,6 +182,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     switch ($requestMethod)
     {
       case 'POST':
+        error_log('passing along a post');
+        error_log(print_r($_POST,true));
         $request->setPostFields($_POST);
         foreach ($_FILES as $paramName => $file)
         {
@@ -210,7 +212,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     if (!is_array($values))
     {
       error_log($request->getResponseBody());
-      throw new \ErrorException('shard responed with error.');  
+      throw new \ErrorException('shard responed with error: ... '.$values);  
     }
     
     
