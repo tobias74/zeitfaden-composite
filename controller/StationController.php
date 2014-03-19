@@ -108,6 +108,7 @@ class StationController extends AbstractCompositeController
     }
 
     $returnEntities = $this->sortEntitiesByRequest($returnEntities, $this->_request);
+    $returnEntities = $this->limitEntitiesByRequest($returnEntities, $this->_request);
     
     $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
     
@@ -318,6 +319,19 @@ class StationController extends AbstractCompositeController
     }
     
     
+    return $entities;
+  }
+
+
+
+
+  protected function limitEntitiesByRequest($entities,$request)
+  {
+    $limit = $request->getParam('limit',100);
+    $limit = 100;
+    $entities = array_slice($entities,0,$limit);
+
+
     return $entities;
   }
 

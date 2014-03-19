@@ -28,7 +28,8 @@ class CompositeConfigLoader
   {
   	$config = $configInstance;
     $config->mongoDbConfig->dbName = $applicationId;
-    $config->mongoDbConfig->serverUrl = '';
+    $config->mongoDbConfig->serverUrl = 'services.zeitfaden.com';
+    $config->redisHost = 'services.zeitfaden.com';
   	
 
     switch ($hostUrl)
