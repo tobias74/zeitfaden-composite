@@ -118,12 +118,18 @@ class UserController extends AbstractCompositeController
 	
 	public function getMyAccountDataAction()
 	{
-		$email = $this->_request->getSessionVar('email','');
-		echo "email is ".$email;
-		$data = $this->getCompositeService()->getAccountDataBasedOnEmail($email);
-		print_r($data);
-		die('end');
-		$this->_response->setHash(array());
+	  try
+	  {
+      $loggedInUserId = $this->_request->getSessionVar('loggedInUserId','');
+      $userData = $this->getUserDataById($loggedInUserId);
+      
+      $this->_response->setHash($userData);
+	  }
+    catch (ZeitfadenNoMatchException $e)
+    {
+      $this->_response->setHash(array());
+    }
+    
 
 	}
 
@@ -192,10 +198,19 @@ error_log(print_r($_POST,true));
 		
 	}
 	
-	public function logoutAction()
-	{
-		$this->passToMyShard();
-	}
+  public function logoutAction()
+  {
+    error_log('logging out!');
+    
+    //$this->setAnonymousSession();
+    $_SESSION['loginPerformedByShard'] = '';
+    $_SESSION['loggedInUserId'] = '';
+    $_SESSION['loginType'] = '';
+    
+    
+    session_destroy();
+  }
+
 	
 	
 	public function getByIdAction()
