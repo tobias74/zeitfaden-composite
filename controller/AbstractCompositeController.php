@@ -23,6 +23,15 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
 
 
+  public function setElasticSearchService($val)
+  {
+    $this->elasticSearchService = $val;
+  }
+
+  protected function getElasticSearchService()
+  {
+    return $this->elasticSearchService;
+  }
 
   
   protected function attachLoadBalancedUrls($returnEntities)
