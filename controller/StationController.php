@@ -230,10 +230,9 @@ class StationController extends AbstractCompositeController
 
   protected function getEntitiesOfNodeById($node,$id)
   {
-    $url = $node.'/station/getById/';
+    $url = $node.'/station/getById/stationId/'.$id;
     //die($url);
     $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->addQueryData(array('stationId' => $id));
     $r->addCookies($_COOKIE);
     $r->send();
 

@@ -307,7 +307,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     else 
     {
       $nodes = $this->getCompositeService()->getSubNodes();
-    
       $returnEntities = array();
       foreach ($nodes as $node)
       {
