@@ -96,7 +96,18 @@ class StationController extends AbstractCompositeController
 
 
 
+  public function getByIdsAction()
+  {
+    return $this->getByRequest();
+  }
+
   public function getAction()
+  {
+    return $this->getByRequest();
+  }
+
+
+  protected function getByRequest()
   {
     $nodes = $this->getCompositeService()->getSubNodes();
 
@@ -113,9 +124,9 @@ class StationController extends AbstractCompositeController
     $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
     
     $this->_response->setHash(array_values($returnEntities));
+    
   }
-
-
+  
   public function getByQueryAction()
   {
     $query = $this->_request->getParam('query', 'missing query');
@@ -267,6 +278,7 @@ class StationController extends AbstractCompositeController
     //die($url);
     $r = new HttpRequest($url, HttpRequest::METH_GET);
     $r->addCookies($_COOKIE);
+    $r->addQueryData($_GET);
     $r->send();
 
     $values = json_decode($r->getResponseBody(),true);
@@ -315,7 +327,7 @@ class StationController extends AbstractCompositeController
     }
     else 
     {
-      throw new WrongRequestException();
+      //throw new WrongRequestException();
     }
     
     
