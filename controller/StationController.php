@@ -264,6 +264,26 @@ class StationController extends AbstractCompositeController
   }
 
 
+	protected function producePassOnHttpRequest($url,$request)
+	{
+	    //$r = new HttpRequest($url, HttpRequest::METH_GET);
+	    $requestMethods = array(
+			'GET' => HttpRequest::METH_GET,
+			'POST' => HttpRequest::METH_POST
+		);
+	    
+	    $r = new HttpRequest($url, $requestMethods[$_SERVER['REQUEST_METHOD']]);
+	    $r->addCookies($_COOKIE);
+	    $r->addQueryData($_GET);
+		
+		switch ($_SERVER['REQUEST_METHOD']) {
+			case 'POST': 
+				$r->setPostFields($_POST);
+				break;
+		}
+		
+		return $r;		
+	}
 
   protected function getEntitiesOfNodeByRequest($node,$request)
   {
@@ -275,12 +295,11 @@ class StationController extends AbstractCompositeController
     
     $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
     //die($url);
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->addCookies($_COOKIE);
-    $r->addQueryData($_GET);
+    $r = $this->producePassOnHttpRequest($url,$request);
     $r->send();
 
     $values = json_decode($r->getResponseBody(),true);
+
     
     return $values;
   }
@@ -338,10 +357,11 @@ class StationController extends AbstractCompositeController
 
   protected function limitEntitiesByRequest($entities,$request)
   {
-    $limit = $request->getParam('limit',100);
-    $limit = 100;
-    $entities = array_slice($entities,0,$limit);
+    $limit = $request->getParam('limit',1000);
 
+
+    $entities = array_slice($entities,0,$limit);
+	
 
     return $entities;
   }
