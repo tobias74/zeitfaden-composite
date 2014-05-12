@@ -20,13 +20,7 @@ class StationController extends AbstractCompositeController
     $stationId = $request->getParam('stationId',0);
     $stationData = $this->getStationDataById($stationId, $userId);
     return $stationData;
-
   }
-
-
-
-
-
 
 
   
@@ -70,6 +64,20 @@ class StationController extends AbstractCompositeController
     $this->passToMyShard();
  	}
   
+  public function getByIdsAction()
+  {
+    return $this->getByRequest($this->_request);
+  }
+
+  public function getAction()
+  {
+    return $this->getByRequest($this->_request);
+  }
+
+
+
+
+
 
   
   protected function sortStationsByElasticSearch($entities, $responseArray)
@@ -95,111 +103,81 @@ class StationController extends AbstractCompositeController
   }
 
 
-
-  public function getByIdsAction()
+  protected function getEntitiesUsingElasticSearch($request)
   {
-    return $this->getByRequest();
-  }
-
-  public function getAction()
-  {
-    return $this->getByRequest();
-  }
-
-
-  protected function getByRequest()
-  {
-    $nodes = $this->getCompositeService()->getSubNodes();
-
-    $returnEntities = array();
     
-    foreach ($nodes as $node)
+    $spec = $this->getSpecificationByRequest($this->_request);
+    
+    if ($spec->hasCriteria())
     {
-      $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$this->_request));
+      $whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
+      $spec->getCriteria()->acceptVisitor($whereArrayMaker);
+      $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
+      error_log(json_encode($filter));
+    }
+    else 
+    {
+      $filter=array();  
     }
 
-    $returnEntities = $this->sortEntitiesByRequest($returnEntities, $this->_request);
-    $returnEntities = $this->limitEntitiesByRequest($returnEntities, $this->_request);
-    
-    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-    
-    $this->_response->setHash(array_values($returnEntities));
-    
-  }
-  
-  public function getByQueryAction()
-  {
-    $query = $this->_request->getParam('query', 'missing query');
+    $responseArray = $this->getElasticSearchService()->performQuery($filter);
 
-    $useEngine = $this->_request->getParam('useEngine', 'native');
-    
-    $url = 'http://query-interpreter.zeitfaden.com/query/translateQuery/query/'.urlencode($query);
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
-    
-    switch ($useEngine)
+    $finalResponse = array();
+    foreach ($responseArray['hits']['hits'] as $index => $data)
     {
-      case 'elastic':
-        
-        $potteryQueryString = $values['potteryQuery'];
-  
-        $queryEngine = new \PhpQueryLanguage\QueryEngine();
-        $stationQuery = $queryEngine->translateQuery($potteryQueryString);
-        
-        
-        $spec = $stationQuery->getSpecification();
-  
-        if ($spec->hasCriteria())
-        {
-          $whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
-          $spec->getCriteria()->acceptVisitor($whereArrayMaker);
-          $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
-          error_log(json_encode($filter));
-        }
-        else 
-        {
-          $filter=array();  
-        }
-  
-        $responseArray = $this->getElasticSearchService()->performQuery($filter);
-        
-        $stationsIds = $this->getStationIdsFromElasticResponse($responseArray);
-  
-  
-        $nodes = $this->getCompositeService()->getSubNodes();
-        $returnEntities = array();
-        foreach ($nodes as $node)
-        {
-          $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByIds($node,$stationsIds));
-        }
-  
-        $returnEntities = $this->sortStationsByElasticSearch($returnEntities, $responseArray);
-        
-        break;
+      $finalResponse[$index] = $data['_source'];
+    }
+    
+    return $finalResponse;
+    //$stationsIds = $this->getStationIdsFromElasticResponse($responseArray);
 
-      default:      
+    /*
+    $nodes = $this->getCompositeService()->getSubNodes();
+    $returnEntities = array();
+    foreach ($nodes as $node)
+    {
+      $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByIds($node,$stationsIds));
+    }
 
-        $nodes = $this->getCompositeService()->getSubNodes();
+    $returnEntities = $this->sortStationsByElasticSearch($returnEntities, $responseArray);
+    */
     
-        $returnEntities = array();
-        
-        foreach ($nodes as $node)
-        {
-          $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByQuery($node,$query));
-        }
-    
-        $returnEntities = $this->sortEntitiesByQuery($returnEntities, $values);
-        
-        break;
-    }   
-    
-
-    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-    
-    $this->_response->setHash(array_values($returnEntities));
   }
+  
+
+  protected function isElasticSearch($request)
+  {
+    $engine = $this->_request->getParam('engine', 'native');
+    return ($engine === 'elastic');
+  }
+
+  protected function getByRequest($request)
+  {
+    if ($this->isElasticSearch($request))
+    {
+      $returnEntities = $this->getEntitiesUsingElasticSearch($request);
+    }
+    else 
+    {
+      $nodes = $this->getCompositeService()->getSubNodes();
+  
+      $returnEntities = array();
+      
+      foreach ($nodes as $node)
+      {
+        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$request));
+      }
+  
+      $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
+      $returnEntities = $this->limitEntitiesByRequest($returnEntities, $request);
+      
+    }
+    
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+    
+  }
+  
 
 
 
@@ -247,20 +225,6 @@ class StationController extends AbstractCompositeController
       
       return array($values);
     }
-  }
-
-
-  protected function getEntitiesOfNodeByQuery($node,$query)
-  {
-    $url = $node.'/getStationsByQuery/'.urlencode($query);
-    //die($url);
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->addCookies($_COOKIE);
-    $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
-    
-    return $values;
   }
 
 

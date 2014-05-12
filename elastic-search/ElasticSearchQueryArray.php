@@ -15,19 +15,20 @@ class ElasticSearchQueryArray
 
     $mainDataMap = new DataMap();
     $mainDataMap->addColumn('id', 'id');
-    $mainDataMap->addColumn('user_id', 'userId');
+    $mainDataMap->addColumn('userId', 'userId');
     $mainDataMap->addColumn('description', 'description');
-    $mainDataMap->addColumn('publish_status', 'publishStatus');
-    $mainDataMap->addColumn('zulu_start_date_string', 'startDate');
-    $mainDataMap->addColumn('start_location.lat', 'startLatitude');
-    $mainDataMap->addColumn('start_location.lon', 'startLongitude');
-    $mainDataMap->addColumn('start_timezone', 'startTimezone');
-    $mainDataMap->addColumn('zulu_end_date_string', 'endDate');
-    $mainDataMap->addColumn('end_location.lat', 'endLatitude');
-    $mainDataMap->addColumn('end_location.lon', 'endLongitude');
-    $mainDataMap->addColumn('end_timezone', 'endTimezone');
-    $mainDataMap->addColumn('start_location', 'startLocation');
-    $mainDataMap->addColumn('end_location', 'endLocation');
+    $mainDataMap->addColumn('publishStatus', 'publishStatus');
+    $mainDataMap->addColumn('zuluStartDateString', 'startDate');
+    $mainDataMap->addColumn('startLocation.lat', 'startLatitude');
+    $mainDataMap->addColumn('startLocation.lon', 'startLongitude');
+    $mainDataMap->addColumn('startTimezone', 'startTimezone');
+    $mainDataMap->addColumn('zuluEndDateString', 'endDate');
+    $mainDataMap->addColumn('endLocation.lat', 'endLatitude');
+    $mainDataMap->addColumn('endLocation.lon', 'endLongitude');
+    $mainDataMap->addColumn('endTimezone', 'endTimezone');
+    $mainDataMap->addColumn('startLocation', 'startLocation');
+    $mainDataMap->addColumn('endLocation', 'endLocation');
+    $mainDataMap->addColumn('startDateWithId', 'startDateWithId');
 
 
     $this->context = $mainDataMap;    
@@ -38,8 +39,8 @@ class ElasticSearchQueryArray
   {
     switch ($column)
     {
-      case 'zulu_start_date_string':
-      case 'zulu_end_date_string':
+      case 'zuluStartDateString':
+      case 'zuluEndDateString':
         $date = \DateTime::createFromFormat('Y-m-d H:i:s',$value);
         return $date->format('Y-m-d').'T'.$date->format('H:i:s');
         break;
