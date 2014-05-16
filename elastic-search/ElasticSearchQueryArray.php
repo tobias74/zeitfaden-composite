@@ -12,26 +12,6 @@ class ElasticSearchQueryArray
   public function __construct($context = null)
   {
     $this->context = $context;
-
-    $mainDataMap = new DataMap();
-    $mainDataMap->addColumn('id', 'id');
-    $mainDataMap->addColumn('userId', 'userId');
-    $mainDataMap->addColumn('description', 'description');
-    $mainDataMap->addColumn('publishStatus', 'publishStatus');
-    $mainDataMap->addColumn('zuluStartDateString', 'startDate');
-    $mainDataMap->addColumn('startLocation.lat', 'startLatitude');
-    $mainDataMap->addColumn('startLocation.lon', 'startLongitude');
-    $mainDataMap->addColumn('startTimezone', 'startTimezone');
-    $mainDataMap->addColumn('zuluEndDateString', 'endDate');
-    $mainDataMap->addColumn('endLocation.lat', 'endLatitude');
-    $mainDataMap->addColumn('endLocation.lon', 'endLongitude');
-    $mainDataMap->addColumn('endTimezone', 'endTimezone');
-    $mainDataMap->addColumn('startLocation', 'startLocation');
-    $mainDataMap->addColumn('endLocation', 'endLocation');
-    $mainDataMap->addColumn('startDateWithId', 'startDateWithId');
-
-
-    $this->context = $mainDataMap;    
   }
   
 
@@ -244,6 +224,10 @@ class ElasticSearchQueryArray
   }
     
 } 
+
+
+
+
 
 
 

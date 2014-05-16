@@ -7,6 +7,11 @@ class CompositeDependencyConfigurator
   {
 
 
+
+
+
+
+
       
     $depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('Facebook','Facebook', new SL\ConstantParameterArray(array($application->getFacebookConfig()))));
 		
@@ -23,7 +28,11 @@ class CompositeDependencyConfigurator
 		
 		
     
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchQueryArray','\Zeitfaden\ElasticSearch\ElasticSearchQueryArray'));
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchSortArray','\Zeitfaden\ElasticSearch\ElasticSearchOrderArray'));
+	
     
+        
     $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchService','\Zeitfaden\ElasticSearch\ElasticSearchService'));
     $depList->addDependency('Application', new SL\UnmanagedInstance($application));
         
@@ -45,11 +54,41 @@ class CompositeDependencyConfigurator
 		//$depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 
 		
+		
+		
+		
+    $mainDataMap = new \Zeitfaden\ElasticSearch\DataMap();
+    $mainDataMap->addColumn('id', 'id');
+    $mainDataMap->addColumn('userId', 'userId');
+    $mainDataMap->addColumn('description', 'description');
+    $mainDataMap->addColumn('publishStatus', 'publishStatus');
+    $mainDataMap->addColumn('zuluStartDateString', 'startDate');
+    $mainDataMap->addColumn('startLocation.lat', 'startLatitude');
+    $mainDataMap->addColumn('startLocation.lon', 'startLongitude');
+    $mainDataMap->addColumn('startTimezone', 'startTimezone');
+    $mainDataMap->addColumn('zuluEndDateString', 'endDate');
+    $mainDataMap->addColumn('endLocation.lat', 'endLatitude');
+    $mainDataMap->addColumn('endLocation.lon', 'endLongitude');
+    $mainDataMap->addColumn('endTimezone', 'endTimezone');
+    $mainDataMap->addColumn('startLocation', 'startLocation');
+    $mainDataMap->addColumn('endLocation', 'endLocation');
+    $mainDataMap->addColumn('startDateWithId', 'startDateWithId');
+    
+    $mainDataMap->addColumn('distanceToPin', 'distanceToPin');
+				
+		
+		
+		
+		
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('StationController'));
         $depList->addDependency('CompositeService', new SL\ManagedComponent('CompositeService'));
         $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
         $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
         $depList->addDependency('ElasticSearchService', new SL\ManagedComponent('ElasticSearchService'));
+        $depList->addDependency('ElasticSearchQueryArrayProvider', new SL\ManagedComponentProvider('ElasticSearchQueryArray'));
+        $depList->addDependency('ElasticSearchSortArrayProvider', new SL\ManagedComponentProvider('ElasticSearchSortArray'));
+	    $depList->addDependency('ElasticSearchStationDataMap', new SL\UnmanagedInstance($mainDataMap));
+		
 						
 
 

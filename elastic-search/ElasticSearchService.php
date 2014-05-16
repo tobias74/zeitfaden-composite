@@ -84,7 +84,7 @@ class ElasticSearchService
   }
 
 
-  public function performQuery($filter)
+  public function performQuery($filter,$sort,$limiter)
   {
       $query = array(
           'query' => array(
@@ -93,23 +93,16 @@ class ElasticSearchService
 
           'filter' => $filter,
 
-/*
-          'sort' => array(
-            '_geo_distance' => array(
-              'startLocation' => array(-1,-1),
-              'order' => 'asc',
-              'unit' => 'km'
-            )
-          )
-  
-*/
 
-          'sort' => array(
-            'startDateWithId' => array('order' => 'asc')
-          )
+          'sort' => $sort
+          
+          ,'from' => $limiter->getOffset()
+		  ,'size' => $limiter->getLength()
  
       );
       
+	  error_log(json_encode($query));
+	  
       $path = $this->getElasticaIndex()->getName() . '/' . $this->getStationType()->getName() . '/_search';
       $response = $this->getElasticaClient()->request($path, \Elastica\Request::GET, $query);
       $responseArray = $response->getData();

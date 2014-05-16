@@ -84,5 +84,6 @@ require_once($baseDir.'/controller/GroupController.php');
 
 require_once(dirname(__FILE__).'/elastic-search/DataMap.php');
 require_once(dirname(__FILE__).'/elastic-search/ElasticSearchQueryArray.php');
+require_once(dirname(__FILE__).'/elastic-search/ElasticSearchOrderArray.php');
 require_once(dirname(__FILE__).'/elastic-search/ElasticSearchService.php');
 

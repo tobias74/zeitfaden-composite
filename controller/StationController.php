@@ -76,51 +76,72 @@ class StationController extends AbstractCompositeController
 
 
 
+  public function setElasticSearchQueryArrayProvider($provider)
+  {
+  	$this->elasticSearchQueryArrayProvider = $provider;
+  }
 
+  public function setElasticSearchSortArrayProvider($provider)
+  {
+  	$this->elasticSearchSortArrayProvider = $provider;
+  }
 
-
+  protected function getElasticSearchQueryArray()
+  {
+  	return $this->elasticSearchQueryArrayProvider->provide($this->getElasticSearchStationDataMap());
+  }
   
-  protected function sortStationsByElasticSearch($entities, $responseArray)
+  protected function getElasticSearchSortArray()
   {
-    return $entities;
+  	return $this->elasticSearchSortArrayProvider->provide($this->getElasticSearchStationDataMap());
   }
 
-
-  protected function getStationIdsFromElasticResponse($responseArray)
+  public function setElasticSearchStationDataMap($val)
   {
-    if (!isset($responseArray['hits']['hits']))
-    {
-      return array();
-    }
-    $hits = $responseArray['hits']['hits'];
-    $ids = array();
-    foreach ($hits as $hit)
-    {
-      $ids[] = $hit['_id'];
-    }
-    
-    return $ids;
+  	$this->elasticSearchStationMapper = $val;
   }
-
+  
+  protected function getElasticSearchStationDataMap()
+  {
+  	return $this->elasticSearchStationMapper;
+  }
+  
 
   protected function getEntitiesUsingElasticSearch($request)
   {
     
     $spec = $this->getSpecificationByRequest($this->_request);
     
+    
     if ($spec->hasCriteria())
     {
-      $whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
+      //$whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
+      $whereArrayMaker = $this->getElasticSearchQueryArray();
       $spec->getCriteria()->acceptVisitor($whereArrayMaker);
       $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
-      error_log(json_encode($filter));
+      //error_log(json_encode($filter));
     }
     else 
     {
       $filter=array();  
     }
+    
+    if ($spec->hasOrderer())
+    {
+      //$sortArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchOrderArray();
+      $sortArrayMaker = $this->getElasticSearchSortArray();
+      $spec->getOrderer()->acceptVisitor($sortArrayMaker);
+      $sortHash = $sortArrayMaker->getArrayForOrderer($spec->getOrderer());
+      //error_log(json_encode($sortHash));
+    }
+    else 
+    {
+      $sortHash = array();  
+    }
 
-    $responseArray = $this->getElasticSearchService()->performQuery($filter);
+  
+    $responseArray = $this->getElasticSearchService()->performQuery($filter,$sortHash,$spec->getLimiter());
+    
 
     $finalResponse = array();
     foreach ($responseArray['hits']['hits'] as $index => $data)
