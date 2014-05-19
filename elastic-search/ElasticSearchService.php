@@ -84,7 +84,7 @@ class ElasticSearchService
   }
 
 
-  public function performQuery($filter,$sort,$limiter)
+  public function searchStations($filter,$sort,$limiter)
   {
       $query = array(
           'query' => array(
@@ -101,8 +101,57 @@ class ElasticSearchService
  
       );
       
-	  error_log(json_encode($query));
+  	  error_log(json_encode($query));
 	  
+      $path = $this->getElasticaIndex()->getName() . '/' . $this->getStationType()->getName() . '/_search';
+      $response = $this->getElasticaClient()->request($path, \Elastica\Request::GET, $query);
+      $responseArray = $response->getData();
+      return $responseArray;
+  }
+
+
+
+  public function searchUsers($filter,$sort,$limiter)
+  {
+      $query = array(
+          'query' => array(
+            'matchAll' => new \stdClass()
+          ),
+
+          'filter' => $filter,
+
+/*
+ "aggs": {
+    "userIds": {
+      "filter": {
+        "range": {
+          "startDateWithId": {
+            "gte": "2014-01-01 00:00:00_521e7be2c295b854591"
+          }
+        }
+      },
+      "aggs": {
+        "Users_with_stations": {
+          "terms": {
+            "field": "userId"
+          }
+        }
+      }
+    }
+  },
+
+*/
+
+
+          'sort' => $sort
+          
+          ,'from' => $limiter->getOffset()
+      ,'size' => $limiter->getLength()
+ 
+      );
+      
+      error_log(json_encode($query));
+    
       $path = $this->getElasticaIndex()->getName() . '/' . $this->getStationType()->getName() . '/_search';
       $response = $this->getElasticaClient()->request($path, \Elastica\Request::GET, $query);
       $responseArray = $response->getData();

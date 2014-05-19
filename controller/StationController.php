@@ -140,7 +140,7 @@ class StationController extends AbstractCompositeController
     }
 
   
-    $responseArray = $this->getElasticSearchService()->performQuery($filter,$sortHash,$spec->getLimiter());
+    $responseArray = $this->getElasticSearchService()->searchStations($filter,$sortHash,$spec->getLimiter());
     
 
     $finalResponse = array();
