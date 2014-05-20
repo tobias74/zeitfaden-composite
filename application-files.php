@@ -20,32 +20,6 @@ require_once($baseDir.'/../frameworks/facebook/src/facebook.php');
 //require_once($baseDir.'/../frameworks/predis/autoload.php');
 //Predis\Autoloader::register();
 
-//neo4jphp
-/*
-spl_autoload_register(function ($sClass) use ($baseDir) {
-  $sLibPath = $baseDir.'/../frameworks/neo4jphp/lib/';
-  $sClassFile = str_replace('\\',DIRECTORY_SEPARATOR,$sClass).'.php';
-  $sClassPath = $sLibPath.$sClassFile;
-  if (file_exists($sClassPath)) {
-    require($sClassPath);
-  }
-});
-*/
-
-
-//thrift
-//require_once($baseDir.'/../frameworks/thrift/php/src/Thrift.php');
-
-/*
-spl_autoload_register(function ($sClass) use ($baseDir) {
-  $sLibPath = $baseDir.'/../frameworks/thrift/php/lib/';
-  $sClassFile = str_replace('\\',DIRECTORY_SEPARATOR,$sClass).'.php';
-  $sClassPath = $sLibPath.$sClassFile;
-  if (file_exists($sClassPath)) {
-    require($sClassPath);
-  }
-});
-*/
 
 spl_autoload_register(function($class) use ($baseDir){
 
@@ -58,6 +32,7 @@ spl_autoload_register(function($class) use ($baseDir){
 });
 
 
+require_once($baseDir.'/../vendor/autoload.php');
 
 require_once($baseDir.'/../my-frameworks/php-visitable-specification/src/php-visitable-specification.php');
 require_once($baseDir.'/../my-frameworks/simple-parser-base/src/simple-parser-base.php');
