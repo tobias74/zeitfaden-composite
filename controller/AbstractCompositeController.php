@@ -55,55 +55,68 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $returnEntities;
   }
 
-  protected function sortEntitiesByQuery($returnEntities, $values)
+  protected function sortEntitiesByRequest($entities,$request)
   {
-    $sortDirection = $values['sortDirection'];
-    $sortField = $values['sortField'];
-    $limit = $values['limit'];
+    $datetime = $request->getParam('datetime',false);
+    $sort = $request->getParam('sort',false);
+    $direction = $request->getParam('direction',false);
+    $lastId = $request->getParam('lastId',false);
     
-    // hier noch die eintraege sortieren.
-    $band = array();
-    $auflage = array();
-    
-    if ($sortField != false)
+    if ($sort === 'byTime')
     {
-      foreach ($returnEntities as $key => $row) 
+      if ($direction === 'intoTheFuture')
       {
-          $band[$key]    = $row['id'];
-          $auflage[$key] = $row[$sortField];
+        $sorter = SORT_ASC;
       }
-      if ($sortDirection == 'ASC')
+      else 
       {
-        //array_multisort($band, SORT_ASC, $auflage, SORT_ASC, $returnEntities);
-        array_multisort($auflage, SORT_ASC, $band, SORT_ASC, $returnEntities);
+        $sorter = SORT_DESC;
       }
-      else if ($sortDirection == 'DESC')
+      
+      if ($lastId)
       {
-        //array_multisort($band, SORT_ASC, $auflage, SORT_DESC, $returnEntities);
-        array_multisort($auflage, SORT_DESC, $band, SORT_ASC, $returnEntities);
+        $sortFieldValues = array();
+        foreach ($entities as $key => &$entityData)
+        {
+          $entityData['syntheticStartDateWithId'] = $entityData['startDate'].'_'.$entityData['id'];
+          $sortFieldValues[$key] = $entityData['syntheticStartDateWithId'];
+        }  
+        array_multisort($sortFieldValues, $sorter, $entities);
       }
-      else
+      else 
       {
-        throw new \ErrorException('why no direction?');
+        $sortFieldValues = array();
+        foreach ($entities as $key => &$entityData)
+        {
+          $sortFieldValues[$key] = $entityData['startDate'];
+        }  
+        array_multisort($sortFieldValues, $sorter, $entities);
       }
     }
-    else
+    else 
     {
-      foreach ($returnEntities as $key => $row) 
-      {
-          $band[$key]    = $row['id'];
-      }
-      array_multisort($band, SORT_ASC, $returnEntities);
-    }      
-          
-        
+      //throw new WrongRequestException();
+    }
     
-    // TODO: Limiting would mean to loose some of the result of some shards.
-    //$returnEntities = array_slice($returnEntities,0,$limit);
     
-    return $returnEntities;
-    
+    return $entities;
   }
+
+
+
+
+  protected function limitEntitiesByRequest($entities,$request)
+  {
+    $limit = $request->getParam('limit',1000);
+
+
+    $entities = array_slice($entities,0,$limit);
+  
+
+    return $entities;
+  }
+
+
 
 
   public function setApplicationId($val)
@@ -139,8 +152,61 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 	
+  public function getByIdAction()
+  {
+    try
+    {
+      $entityData = $this->getEntityDataByRequest($this->_request);      
+      $returnEntities = $this->attachLoadBalancedUrls(array($entityData));
+      $this->_response->setHash($returnEntities[0]);
+    }
+    catch (ZeitfadenNoMatchException $e)
+    {
+      $this->_response->addHeader('HTTP/1.0 404 Not Found');
+    }
+    
+  }
   
   	
+  protected function producePassOnHttpRequest($url,$request)
+  {
+      //$r = new HttpRequest($url, HttpRequest::METH_GET);
+      $requestMethods = array(
+      'GET' => HttpRequest::METH_GET,
+      'POST' => HttpRequest::METH_POST
+    );
+      
+      $r = new HttpRequest($url, $requestMethods[$_SERVER['REQUEST_METHOD']]);
+      $r->addCookies($_COOKIE);
+      $r->addQueryData($_GET);
+    
+    switch ($_SERVER['REQUEST_METHOD']) {
+      case 'POST': 
+        $r->setPostFields($_POST);
+        break;
+    }
+    
+    return $r;    
+  }
+
+  protected function getEntitiesOfNodeByRequest($node,$request)
+  {
+    $params = "";
+    foreach ($request->getParams() as $name => $value)
+    {
+      $params.=$name.'/'.urlencode($value).'/';
+    }
+    
+    $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
+    //die($url);
+    $r = $this->producePassOnHttpRequest($url,$request);
+    $r->send();
+
+    $values = json_decode($r->getResponseBody(),true);
+
+    
+    return $values;
+  }
 
 
 
@@ -258,6 +324,58 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
   }
 
+
+
+
+  
+  public function getAction()
+  {
+    return $this->getByRequest($this->_request);
+  }
+  
+  
+  public function getByIdsAction()
+  {
+    return $this->getByRequest($this->_request);
+  }
+  
+  
+
+
+
+  protected function isElasticSearch($request)
+  {
+    $engine = $this->_request->getParam('engine', 'native');
+    return ($engine === 'elastic');
+  }
+
+  protected function getByRequest($request)
+  {
+    if ($this->isElasticSearch($request))
+    {
+      $returnEntities = $this->getEntitiesUsingElasticSearch($request);
+    }
+    else 
+    {
+      $nodes = $this->getCompositeService()->getSubNodes();
+  
+      $returnEntities = array();
+      
+      foreach ($nodes as $node)
+      {
+        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$request));
+      }
+  
+      $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
+      $returnEntities = $this->limitEntitiesByRequest($returnEntities, $request);
+      
+    }
+    
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+    
+  }
+  
 
 
   protected function getShardByUserId($userId)
