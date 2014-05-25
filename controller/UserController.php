@@ -11,6 +11,20 @@ class UserController extends AbstractCompositeController
 
   }
 
+  public function getByIdsAction()
+  {
+  	$returnEntities = $this->getSearchStrategy($this->_request)->getUsersByIds($this->_request);
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+  }
+  
+  public function getAction()
+  {
+  	$returnEntities = $this->getSearchStrategy($this->_request)->getUsersByRequest($this->_request);
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+  }
+
 
   public function showExportAction()
   {
@@ -46,7 +60,10 @@ class UserController extends AbstractCompositeController
   
   
   
-	
+  
+  
+  
+  
 	
 
   public function serveAttachmentAction()

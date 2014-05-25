@@ -14,6 +14,17 @@ class ElasticSearchService
         return $this->application;
     }
 
+
+    public function setProfiler($val)
+    {
+        $this->profiler = $val;
+    }
+
+    protected function getProfiler()
+    {
+        return $this->profiler;
+    }
+
     protected function getApplicationId()
     {
         return $this->getApplication()->getApplicationId();
@@ -27,13 +38,6 @@ class ElasticSearchService
     return array(
       'host' => $values['elastic_search_host']
     );
-  }
-
-  protected function getElasticaClient()
-  {
-      $client = new \Elastica\Client($this->getElasticSearchConfiguration());
-      return $client;
-
   }
 
   protected function getElasticSearchNativeConfiguration()
@@ -74,6 +78,10 @@ class ElasticSearchService
   	return "station";//, station-anonymous";
   }
 
+  public function getUserTypeName()
+  {
+    return "user";//, station-anonymous";
+  }
 
 
   protected function getStationIndexToSearch()
@@ -91,10 +99,32 @@ class ElasticSearchService
     }
   }
 
+  protected function getUserStationIndexToSearch()
+  {
+    switch ($this->getApplicationId())
+    {
+      case "zeitfaden_test": 
+        return "clojure-stations-test";
+        break;
+      
+      case "zeitfaden_live";
+        return "clojure-stations-live";
+        break;
+      
+    }
+  }
+
+
   public function getStationTypeToSearch()
   {
   	return "station";
   }
+
+  public function getUserTypeToSearch()
+  {
+  	return "user";
+  }
+
 
   public function searchStations($filter,$sort,$limiter)
   {
@@ -120,11 +150,16 @@ class ElasticSearchService
 	  
   	  error_log(json_encode($params));
 	  
-	  return $this->getNativeClient()->search($params);
+    $timer = $this->getProfiler()->startTimer('elastic searching stations');
+	  $returnValue = $this->getNativeClient()->search($params);
+	  $timer->stop();
+    
+    return $returnValue;
   }
 
 
-  public function old__searchStations($filter,$sort,$limiter)
+
+  public function searchUserStations($filter,$sort,$limiter)
   {
       $query = array(
           'query' => array(
@@ -141,14 +176,20 @@ class ElasticSearchService
  
       );
       
-  	  error_log(json_encode($query));
+	  $params = array();
+	  $params['index'] = $this->getUserStationIndexToSearch();
+	  $params['type'] = $this->getStationTypeToSearch();
+	  $params['body'] = $query;
 	  
-      $path = $this->getStationIndexName() . '/' . $this->getStationTypeName() . '/_search';
-      $response = $this->getElasticaClient()->request($path, \Elastica\Request::GET, $query);
-      $responseArray = $response->getData();
-      return $responseArray;
-  }
+  	  error_log(json_encode($params));
+	  
+    $timer = $this->getProfiler()->startTimer('elastic searching userstations');
+    $returnValue = $this->getNativeClient()->search($params);
+    $timer->stop();
+    
+    return $returnValue;
 
+  }
 
 
   public function searchUsers($filter,$sort,$limiter)
@@ -160,28 +201,6 @@ class ElasticSearchService
 
           'filter' => $filter,
 
-/*
- "aggs": {
-    "userIds": {
-      "filter": {
-        "range": {
-          "startDateWithId": {
-            "gte": "2014-01-01 00:00:00_521e7be2c295b854591"
-          }
-        }
-      },
-      "aggs": {
-        "Users_with_stations": {
-          "terms": {
-            "field": "userId"
-          }
-        }
-      }
-    }
-  },
-
-*/
-
 
           'sort' => $sort
           
@@ -190,16 +209,20 @@ class ElasticSearchService
  
       );
       
-      error_log(json_encode($query));
+    $params = array();
+    $params['index'] = $this->getUserStationIndexToSearch();
+    $params['type'] = $this->getUserTypeToSearch();
+    $params['body'] = $query;
     
-      $path = $this->getElasticaIndex()->getName() . '/' . $this->getStationType()->getName() . '/_search';
-      $response = $this->getElasticaClient()->request($path, \Elastica\Request::GET, $query);
-      $responseArray = $response->getData();
-      
-      return $responseArray;
-        
-
+      error_log(json_encode($params));
+    
+    $timer = $this->getProfiler()->startTimer('elastic searching users');
+    $returnValue = $this->getNativeClient()->search($params);
+    $timer->stop();
+    
+    return $returnValue;
   }
+
 
 
 

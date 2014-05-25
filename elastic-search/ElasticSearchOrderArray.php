@@ -31,7 +31,10 @@ class ElasticSearchOrderArray
     $column = $this->context->getColumnForField($singleOrderer->getField());
 
     $sortHash = array(
-      $column => array('order' => strtolower($singleOrderer->getDirection()))
+      $column => array(
+        'order' => strtolower($singleOrderer->getDirection()),
+        'ignore_unmapped' => true
+      )
     );
 
     $this->setArrayForOrderer($singleOrderer, $sortHash);

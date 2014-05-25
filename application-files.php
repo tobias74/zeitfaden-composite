@@ -31,6 +31,8 @@ spl_autoload_register(function($class) use ($baseDir){
 
 });
 
+require_once($baseDir.'/../frameworks/Underscore.php/underscore.php');
+
 
 require_once($baseDir.'/../vendor/autoload.php');
 
@@ -56,6 +58,10 @@ require_once($baseDir.'/controller/AbstractCompositeController.php');
 require_once($baseDir.'/controller/UserController.php');
 require_once($baseDir.'/controller/StationController.php');
 require_once($baseDir.'/controller/GroupController.php');
+
+require_once($baseDir.'/controller/search-strategies/AbstractSearchStrategy.php');
+require_once($baseDir.'/controller/search-strategies/ElasticSearchStrategy.php');
+require_once($baseDir.'/controller/search-strategies/NativeSearchStrategy.php');
 
 require_once(dirname(__FILE__).'/elastic-search/DataMap.php');
 require_once(dirname(__FILE__).'/elastic-search/ElasticSearchQueryArray.php');

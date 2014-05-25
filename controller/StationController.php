@@ -23,6 +23,21 @@ class StationController extends AbstractCompositeController
   }
 
 
+  public function getByIdsAction()
+  {
+  	$returnEntities = $this->getSearchStrategy($this->_request)->getStationsByIds($this->_request);
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+  }
+  
+  public function getAction()
+  {
+  	$returnEntities = $this->getSearchStrategy($this->_request)->getStationsByRequest($this->_request);
+    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    $this->_response->setHash(array_values($returnEntities));
+  }
+  
+
   
 
 
@@ -54,83 +69,8 @@ class StationController extends AbstractCompositeController
   
 
 
-  public function setElasticSearchQueryArrayProvider($provider)
-  {
-  	$this->elasticSearchQueryArrayProvider = $provider;
-  }
-
-  public function setElasticSearchSortArrayProvider($provider)
-  {
-  	$this->elasticSearchSortArrayProvider = $provider;
-  }
-
-  protected function getElasticSearchQueryArray()
-  {
-  	return $this->elasticSearchQueryArrayProvider->provide($this->getElasticSearchStationDataMap());
-  }
-  
-  protected function getElasticSearchSortArray()
-  {
-  	return $this->elasticSearchSortArrayProvider->provide($this->getElasticSearchStationDataMap());
-  }
-
-  public function setElasticSearchStationDataMap($val)
-  {
-  	$this->elasticSearchStationMapper = $val;
-  }
-  
-  protected function getElasticSearchStationDataMap()
-  {
-  	return $this->elasticSearchStationMapper;
-  }
   
 
-  protected function getEntitiesUsingElasticSearch($request)
-  {
-    
-    $spec = $this->getSpecificationByRequest($this->_request);
-    
-    
-    if ($spec->hasCriteria())
-    {
-      //$whereArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchQueryArray();
-      $whereArrayMaker = $this->getElasticSearchQueryArray();
-      $spec->getCriteria()->acceptVisitor($whereArrayMaker);
-      $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
-      //error_log(json_encode($filter));
-    }
-    else 
-    {
-      $filter=array();  
-    }
-    
-    if ($spec->hasOrderer())
-    {
-      //$sortArrayMaker = new \Zeitfaden\ElasticSearch\ElasticSearchOrderArray();
-      $sortArrayMaker = $this->getElasticSearchSortArray();
-      $spec->getOrderer()->acceptVisitor($sortArrayMaker);
-      $sortHash = $sortArrayMaker->getArrayForOrderer($spec->getOrderer());
-      //error_log(json_encode($sortHash));
-    }
-    else 
-    {
-      $sortHash = array();  
-    }
-
-  
-    $responseArray = $this->getElasticSearchService()->searchStations($filter,$sortHash,$spec->getLimiter());
-    
-
-    $finalResponse = array();
-    foreach ($responseArray['hits']['hits'] as $index => $data)
-    {
-      $finalResponse[$index] = $data['_source'];
-    }
-    
-    return $finalResponse;
-    
-  }
-  
 
 
 

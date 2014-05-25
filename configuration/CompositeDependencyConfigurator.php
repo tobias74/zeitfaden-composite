@@ -35,6 +35,7 @@ class CompositeDependencyConfigurator
         
     $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchService','\Zeitfaden\ElasticSearch\ElasticSearchService'));
     $depList->addDependency('Application', new SL\UnmanagedInstance($application));
+    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
         
     
 		$parameterArray = new SL\ParameterArray();
@@ -46,13 +47,6 @@ class CompositeDependencyConfigurator
     
             		
 		
-		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('UserController'));
-        $depList->addDependency('CompositeService', new SL\ManagedComponent('CompositeService'));
-        $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
-        $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
-        $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
-		//$depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
-
 		
 		
 		
@@ -84,13 +78,29 @@ class CompositeDependencyConfigurator
         $depList->addDependency('CompositeService', new SL\ManagedComponent('CompositeService'));
         $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
         $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
+        $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
+        $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
+		
+						
+
+		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('UserController'));
+        $depList->addDependency('CompositeService', new SL\ManagedComponent('CompositeService'));
+        $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
+        $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
+        $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
+        $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
+        $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
+		//$depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+		
+		
+
+		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchStrategy'));
         $depList->addDependency('ElasticSearchService', new SL\ManagedComponent('ElasticSearchService'));
         $depList->addDependency('ElasticSearchQueryArrayProvider', new SL\ManagedComponentProvider('ElasticSearchQueryArray'));
         $depList->addDependency('ElasticSearchSortArrayProvider', new SL\ManagedComponentProvider('ElasticSearchSortArray'));
 	    $depList->addDependency('ElasticSearchStationDataMap', new SL\UnmanagedInstance($mainDataMap));
-		
-						
 
+		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('NativeSearchStrategy'));
 
 
     

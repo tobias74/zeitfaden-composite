@@ -65,13 +65,14 @@ class ElasticSearchQueryArray
   
   public function visitEqualCriteria($criteria)
   {
-    throw new \ErrorException('not yet implemented');
-    return;
-
     $mapper = $this->context;
     $column = $mapper->getColumnForField($criteria->getField());
 
-    $comp = array($column => $criteria->getValue());
+    $comp = array(
+      'term' => array(
+        $column => $criteria->getValue()
+      )
+    );
     
     $this->setArrayForCriteria($criteria, $comp);
   }
@@ -147,14 +148,15 @@ class ElasticSearchQueryArray
     
   public function visitNotEqualCriteria($criteria)
   {
-    throw new \ErrorException('not yet implemented');
-    return;
     $mapper = $this->context;
     $column = $mapper->getColumnForField($criteria->getField());
 
-    $comp = array($column => array(
-      '$ne' => $this->getTranslatedValue($column, $criteria->getValue())
-      )
+    $comp = array(
+		'not' => array(
+      		'term' => array(
+      			$column => $criteria->getValue()
+			)
+      	)
     );
     
     $this->setArrayForCriteria($criteria, $comp);

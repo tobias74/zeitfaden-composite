@@ -12,25 +12,12 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
-
   protected function getAttachmentUrlByRequest($request)
   {
     $entityId = $request->getParam($this->idName,0);
     $entityData = $this->getEntityDataByRequest($request);
     $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
     return $serveAttachmentUrl;
-  }
-
-
-
-  public function setElasticSearchService($val)
-  {
-    $this->elasticSearchService = $val;
-  }
-
-  protected function getElasticSearchService()
-  {
-    return $this->elasticSearchService;
   }
 
   
@@ -55,103 +42,10 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $returnEntities;
   }
 
-  protected function sortEntitiesByRequest($entities,$request)
-  {
-    $datetime = $request->getParam('datetime',false);
-    $sort = $request->getParam('sort',false);
-    $direction = $request->getParam('direction',false);
-    $lastId = $request->getParam('lastId',false);
-    
-    if ($sort === 'byTime')
-    {
-      if ($direction === 'intoTheFuture')
-      {
-        $sorter = SORT_ASC;
-      }
-      else 
-      {
-        $sorter = SORT_DESC;
-      }
-      
-      if ($lastId)
-      {
-        $sortFieldValues = array();
-        foreach ($entities as $key => &$entityData)
-        {
-          $entityData['syntheticStartDateWithId'] = $entityData['startDate'].'_'.$entityData['id'];
-          $sortFieldValues[$key] = $entityData['syntheticStartDateWithId'];
-        }  
-        array_multisort($sortFieldValues, $sorter, $entities);
-      }
-      else 
-      {
-        $sortFieldValues = array();
-        foreach ($entities as $key => &$entityData)
-        {
-          $sortFieldValues[$key] = $entityData['startDate'];
-        }  
-        array_multisort($sortFieldValues, $sorter, $entities);
-      }
-    }
-    else 
-    {
-      //throw new WrongRequestException();
-    }
-    
-    
-    return $entities;
-  }
 
-
-
-
-  protected function limitEntitiesByRequest($entities,$request)
-  {
-    $limit = $request->getParam('limit',1000);
-
-
-    $entities = array_slice($entities,0,$limit);
-  
-
-    return $entities;
-  }
-
-
-
-
-  public function setApplicationId($val)
-  {
-    $this->applicationId = $val;
-  }
-
-  public function getApplicationId()
-  {
-    return $this->applicationId;
-  }
-
-  public function setCompositeService($val)
-  {
-    $this->compositeService = $val;
-  }
-
-  public function getCompositeService()
-  {
-    return $this->compositeService;
-  }
-
-
-
-  public function setShardingService($val)
-  {
-    $this->shardingService = $val;
-  }
-
-  public function getShardingService()
-  {
-    return $this->shardingService;
-  }
 
 	
+
   public function getByIdAction()
   {
     try
@@ -168,45 +62,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
   
   	
-  protected function producePassOnHttpRequest($url,$request)
-  {
-      //$r = new HttpRequest($url, HttpRequest::METH_GET);
-      $requestMethods = array(
-      'GET' => HttpRequest::METH_GET,
-      'POST' => HttpRequest::METH_POST
-    );
-      
-      $r = new HttpRequest($url, $requestMethods[$_SERVER['REQUEST_METHOD']]);
-      $r->addCookies($_COOKIE);
-      $r->addQueryData($_GET);
-    
-    switch ($_SERVER['REQUEST_METHOD']) {
-      case 'POST': 
-        $r->setPostFields($_POST);
-        break;
-    }
-    
-    return $r;    
-  }
-
-  protected function getEntitiesOfNodeByRequest($node,$request)
-  {
-    $params = "";
-    foreach ($request->getParams() as $name => $value)
-    {
-      $params.=$name.'/'.urlencode($value).'/';
-    }
-    
-    $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
-    //die($url);
-    $r = $this->producePassOnHttpRequest($url,$request);
-    $r->send();
-
-    $values = json_decode($r->getResponseBody(),true);
-
-    
-    return $values;
-  }
 
 
 
@@ -328,19 +183,11 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
 
   
-  public function getAction()
-  {
-    return $this->getByRequest($this->_request);
-  }
   
   
-  public function getByIdsAction()
-  {
-    return $this->getByRequest($this->_request);
-  }
   
   
-
+	
 
 
   protected function isElasticSearch($request)
@@ -349,33 +196,18 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return ($engine === 'elastic');
   }
 
-  protected function getByRequest($request)
-  {
-    if ($this->isElasticSearch($request))
-    {
-      $returnEntities = $this->getEntitiesUsingElasticSearch($request);
-    }
-    else 
-    {
-      $nodes = $this->getCompositeService()->getSubNodes();
   
-      $returnEntities = array();
-      
-      foreach ($nodes as $node)
-      {
-        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$request));
-      }
-  
-      $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
-      $returnEntities = $this->limitEntitiesByRequest($returnEntities, $request);
-      
-    }
-    
-    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-    $this->_response->setHash(array_values($returnEntities));
-    
-  }
-  
+	protected function getSearchStrategy($request)
+	{
+	    if ($this->isElasticSearch($request))
+	    {
+	    	return $this->getElasticSearchStrategyProvider()->provide($this);
+	    }
+	    else 
+	    {
+	    	return $this->getNativeSearchStrategyProvider()->provide($this);
+	    }
+	}
 
 
   protected function getShardByUserId($userId)
@@ -444,21 +276,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
         $entityData = $returnEntities[0];
         return $entityData;
       }
-      
     }
-
-
-
-
-
-    
-  
   }
-
-
-  
-
-
 
 
 
@@ -484,17 +303,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
   
   
-  protected function performQuery($requestPath)
-  {
-    return $this->getCompositeService()->performQuery($requestPath);
-  }
   	
 	
-  public function xxx_still_used_getVideoUrl($item)
-  {
-    return "http://".$_SERVER['HTTP_HOST']."/station/serveAttachment/stationId/".$item->getId()."/userId/".$item->getUserId()."";
-  }
-  
   
 	protected function declareActionsThatNeedLogin()
 	{
@@ -510,7 +320,55 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 	
 	
 	
+  public function setApplicationId($val)
+  {
+    $this->applicationId = $val;
+  }
+
+  public function getApplicationId()
+  {
+    return $this->applicationId;
+  }
+
+  public function setCompositeService($val)
+  {
+    $this->compositeService = $val;
+  }
+
+  public function getCompositeService()
+  {
+    return $this->compositeService;
+  }
+
+  public function setShardingService($val)
+  {
+    $this->shardingService = $val;
+  }
+
+  public function getShardingService()
+  {
+    return $this->shardingService;
+  }
   
+  public function setElasticSearchStrategyProvider($val)
+  {
+  	$this->elasticSearchStrategyProvider = $val;
+  }
+  
+  public function getElasticSearchStrategyProvider()
+  {
+  	return $this->elasticSearchStrategyProvider;
+  }
+  
+  public function setNativeSearchStrategyProvider($val)
+  {
+  	$this->nativeSearchStrategyProvider = $val;
+  }
+  
+  public function getNativeSearchStrategyProvider()
+  {
+  	return $this->nativeSearchStrategyProvider;
+  }
   
   
 }
