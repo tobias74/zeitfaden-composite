@@ -12,6 +12,32 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
+
+  public function getByIdsAction()
+  {
+    $loadBalancedUrls = $this->_request->getParam('loadBalancedUrls',1);
+    $returnEntities = $this->getEntitiesByIds($this->_request);
+    if ($loadBalancedUrls)
+    {
+      $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    }
+    $this->_response->setHash(array_values($returnEntities));
+  }
+  
+  public function getAction()
+  {
+    $loadBalancedUrls = $this->_request->getParam('loadBalancedUrls',1);
+    $returnEntities = $this->getEntitiesByRequest($this->_request);
+    if ($loadBalancedUrls)
+    {
+      $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+    }
+    $this->_response->setHash(array_values($returnEntities));
+  }
+
+
+
+
   protected function getAttachmentUrlByRequest($request)
   {
     $entityId = $request->getParam($this->idName,0);

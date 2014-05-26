@@ -56,14 +56,6 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
     $spec->setLimiter(new \VisitableSpecification\Limiter(0,count($allStations)+1));
     $allUsers = $this->getUsersBySpecification($spec);
     
-    /*
-    print_r(__::find($allUsers, function($user){
-      return ($user['id'] == '520111e030714600436');
-    }));
-
-    print_r($allUsers);
-    die();
-    */
     
     $enrichedUsers = __::map($allStations, function($station) use ($allUsers){
       $currentUserId = $station['userId'];  

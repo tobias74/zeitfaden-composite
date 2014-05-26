@@ -23,18 +23,14 @@ class StationController extends AbstractCompositeController
   }
 
 
-  public function getByIdsAction()
+  protected function getEntitiesByIds($request)
   {
-  	$returnEntities = $this->getSearchStrategy($this->_request)->getStationsByIds($this->_request);
-    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-    $this->_response->setHash(array_values($returnEntities));
+    return $this->getSearchStrategy($request)->getStationsByIds($request);
   }
-  
-  public function getAction()
+
+  protected function getEntitiesByRequest($request)
   {
-  	$returnEntities = $this->getSearchStrategy($this->_request)->getStationsByRequest($this->_request);
-    $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
-    $this->_response->setHash(array_values($returnEntities));
+    return $this->getSearchStrategy($request)->getStationsByRequest($request);
   }
   
 
