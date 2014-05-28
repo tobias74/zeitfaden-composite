@@ -112,6 +112,24 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	        array_multisort($sortFieldValues, $sorter, $entities);
 	      }
 	    }
+		else if ($sort == "byDistanceToPin")
+		{
+	      if ($direction === 'farFirst')
+	      {
+	        $sorter = SORT_DESC;
+	      }
+	      else 
+	      {
+	        $sorter = SORT_ASC;
+	      }
+          $sortFieldValues = array();
+	      foreach ($entities as $key => &$entityData)
+	      {
+	        $sortFieldValues[$key] = $entityData['distanceToPin'];
+	      }  
+	      array_multisort($sortFieldValues, $sorter, $entities);
+			
+		}
 	    else 
 	    {
 	      //throw new WrongRequestException();
