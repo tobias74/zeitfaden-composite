@@ -23,16 +23,39 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 		return $this->performSearchOnNodes($request);
 	}
 	
+  public function getProfiler()
+  {
+    return $this->profiler; 
+  }
+  
+  public function setProfiler($val)
+  {
+    $this->profiler = $val; 
+  }
+
+
 	
 	protected function performSearchOnNodes($request)
 	{
-	  $nodes = $this->getMyControllerContext()->getCompositeService()->getSubNodes();
-  
       $returnEntities = array();
-      
+
+
+	  $pool = new HttpRequestPool();
+	  
+	  $nodes = $this->getMyControllerContext()->getCompositeService()->getSubNodes();
       foreach ($nodes as $node)
       {
-        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeByRequest($node,$request));
+	    $r = $this->producePassOnHttpRequest($node,$request);
+		$pool->attach($r);
+      }
+	  
+	  $pool->send();
+	  
+      
+      foreach ($pool as $r)
+      {
+        $returnEntities = array_merge($returnEntities, json_decode($r->getResponseBody(),true));
+		
       }
   
       $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
@@ -43,20 +66,9 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
 	protected function getEntitiesOfNodeByRequest($node,$request)
 	{
-	    $params = "";
-	    foreach ($request->getParams() as $name => $value)
-	    {
-	      $params.=$name.'/'.urlencode($value).'/';
-	    }
-	    
-	    $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
-	    //die($url);
-	    $r = $this->producePassOnHttpRequest($url,$request);
+	    $r = $this->producePassOnHttpRequest($node,$request);
 	    $r->send();
-	
 	    $values = json_decode($r->getResponseBody(),true);
-	
-	    
 	    return $values;
 	}
 	
@@ -116,25 +128,33 @@ class NativeSearchStrategy extends AbstractSearchStrategy
     	return $entities;
 	}
 	
-  protected function producePassOnHttpRequest($url,$request)
+  protected function producePassOnHttpRequest($node,$request)
   {
-      //$r = new HttpRequest($url, HttpRequest::METH_GET);
+      $params = "";
+      foreach ($request->getParams() as $name => $value)
+      {
+        $params.=$name.'/'.urlencode($value).'/';
+      }
+  	
+      $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
+	
+	
       $requestMethods = array(
-      'GET' => HttpRequest::METH_GET,
-      'POST' => HttpRequest::METH_POST
-    );
+        'GET' => HttpRequest::METH_GET,
+        'POST' => HttpRequest::METH_POST
+      );
       
       $r = new HttpRequest($url, $requestMethods[$_SERVER['REQUEST_METHOD']]);
       $r->addCookies($_COOKIE);
       $r->addQueryData($_GET);
     
-    switch ($_SERVER['REQUEST_METHOD']) {
-      case 'POST': 
-        $r->setPostFields($_POST);
-        break;
-    }
+      switch ($_SERVER['REQUEST_METHOD']) {
+        case 'POST': 
+          $r->setPostFields($_POST);
+          break;
+      }
     
-    return $r;    
+      return $r;    
   }
 	
 	

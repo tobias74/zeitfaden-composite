@@ -37,6 +37,15 @@ class CompositeServiceFacade
     return $this->applicationIni['front_end_urls'];
   }
 
+  public function getProfiler()
+  {
+    return $this->profiler; 
+  }
+  
+  public function setProfiler($val)
+  {
+    $this->profiler = $val; 
+  }
 
 
   public function getRandomSubNode()
@@ -87,8 +96,11 @@ class CompositeServiceFacade
 
 	public function performQuery($requestPath,$postHash=array())
 	{
+	    $timer = $this->getProfiler()->startTimer('Request: '.$requestPath);
 	    $urls = $this->prepareUrls($requestPath);
 	    $results = $this->fetchResults($urls,$postHash);
+      $timer->stop();
+      
 	    return $results;
 	}
 

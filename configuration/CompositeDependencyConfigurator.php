@@ -67,6 +67,7 @@ class CompositeDependencyConfigurator
     $mainDataMap->addColumn('startLocation', 'startLocation');
     $mainDataMap->addColumn('endLocation', 'endLocation');
     $mainDataMap->addColumn('startDateWithId', 'startDateWithId');
+    $mainDataMap->addColumn('fileType', 'fileType');
     
     $mainDataMap->addColumn('distanceToPin', 'distanceToPin');
 				
@@ -80,6 +81,7 @@ class CompositeDependencyConfigurator
         $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
         $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
         $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
+        $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 		
 						
 
@@ -90,7 +92,7 @@ class CompositeDependencyConfigurator
         $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
         $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
         $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
-		//$depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+		    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 		
 		
 
@@ -98,9 +100,13 @@ class CompositeDependencyConfigurator
         $depList->addDependency('ElasticSearchService', new SL\ManagedComponent('ElasticSearchService'));
         $depList->addDependency('ElasticSearchQueryArrayProvider', new SL\ManagedComponentProvider('ElasticSearchQueryArray'));
         $depList->addDependency('ElasticSearchSortArrayProvider', new SL\ManagedComponentProvider('ElasticSearchSortArray'));
-	    $depList->addDependency('ElasticSearchStationDataMap', new SL\UnmanagedInstance($mainDataMap));
+	      $depList->addDependency('ElasticSearchStationDataMap', new SL\UnmanagedInstance($mainDataMap));
+        $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+
+
 
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('NativeSearchStrategy'));
+    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 
 
     
@@ -119,6 +125,7 @@ class CompositeDependencyConfigurator
     $depList->addDependency('Config', new SL\UnmanagedValue($application->getConfig()));
     $depList->addDependency('ApplicationIni', new SL\UnmanagedValue($application->getApplicationIni()));
     $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
+    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
         
 
 

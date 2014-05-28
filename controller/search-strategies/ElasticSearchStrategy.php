@@ -3,6 +3,18 @@
 class ElasticSearchStrategy extends AbstractSearchStrategy
 {
 	
+  
+  public function getProfiler()
+  {
+    return $this->profiler; 
+  }
+  
+  public function setProfiler($val)
+  {
+    $this->profiler = $val; 
+  }
+
+  
 	public function getUsersByIds($request)
 	{
 		throw new \ErrorException('not yet implemented');
