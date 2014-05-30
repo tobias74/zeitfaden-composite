@@ -24,6 +24,26 @@ class UserController extends AbstractCompositeController
 
 
 
+  protected function getUserDataById($userId)
+  {
+    $shardData = $this->getShardByUserId($userId);
+    $url = 'http://'.$shardData['shardUrl'].'/user/getById/userId/'.$userId;
+    
+    //echo $url;
+    
+    $r = new HttpRequest($url, HttpRequest::METH_GET);
+    $r->addCookies($_COOKIE);
+    
+    $r->send();
+    $values = json_decode($r->getResponseBody(),true);
+    
+    $returnValues = $values['user'];
+    
+    $returnValues['shardUrl'] = $shardData['shardUrl'];
+
+    return $returnValues;
+  
+  }
 
 
 

@@ -57,7 +57,6 @@ require_once($baseDir.'/CompositeServiceFacade.php');
 require_once($baseDir.'/controller/AbstractCompositeController.php');
 require_once($baseDir.'/controller/UserController.php');
 require_once($baseDir.'/controller/StationController.php');
-require_once($baseDir.'/controller/GroupController.php');
 
 require_once($baseDir.'/controller/search-strategies/AbstractSearchStrategy.php');
 require_once($baseDir.'/controller/search-strategies/ElasticSearchStrategy.php');

@@ -22,6 +22,10 @@ class StationController extends AbstractCompositeController
     return $stationData;
   }
 
+	protected function getMyEntityDataById($stationId, $userId = false)
+	{
+		return $this->getStationDataById($stationId,$userId);
+	}
 
   protected function getEntitiesByIds($request)
   {
@@ -68,6 +72,49 @@ class StationController extends AbstractCompositeController
   
 
 
+  protected function getStationDataById($stationId, $userId = false)
+  {
+    if ($userId != false)
+    {
+      $shardData = $this->getShardByUserId($userId);
+      $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId;
+      
+      $r = new HttpRequest($url, HttpRequest::METH_GET);
+      $r->addCookies($_COOKIE);
+      $r->send();
+      $values = json_decode($r->getResponseBody(),true);
+      
+      $returnValues = $values;
+      
+      $returnValues['shardUrl'] = $shardData['shardUrl'];
+  
+      return $returnValues;
+      
+    }
+    else 
+    {
+      $nodes = $this->getCompositeService()->getSubNodes();
+      $returnEntities = array();
+      foreach ($nodes as $node)
+      {
+        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeById($node,$stationId));
+      }
+        
+      if (count($returnEntities) > 1)
+      {
+        throw new \ErrorException('found too many.');
+      }
+      else if (count($returnEntities) === 0)
+      {
+        throw new ZeitfadenNoMatchException();
+      }
+      else 
+      {
+        $entityData = $returnEntities[0];
+        return $entityData;
+      }
+    }
+  }
 
 
 
