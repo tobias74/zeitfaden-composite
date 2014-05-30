@@ -47,14 +47,13 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
 
 
-
-  protected function getAttachmentUrlByRequest($request)
+  protected function getAttachmentUrlByEntityId($entityId)
   {
-    $entityId = $request->getParam($this->idName,0);
-    $entityData = $this->getEntityDataByRequest($request);
+    $entity = $this->getMyEntityById($entityId);
     $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
     return $serveAttachmentUrl;
   }
+
 
   
   protected function attachLoadBalancedUrls($returnEntities)
