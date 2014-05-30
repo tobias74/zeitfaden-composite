@@ -22,10 +22,14 @@ class StationController extends AbstractCompositeController
     return $stationData;
   }
 
-	protected function getMyEntityDataById($stationId, $userId = false)
-	{
-		return $this->getStationDataById($stationId,$userId);
-	}
+
+  protected function getAttachmentUrlByRequest($request)
+  {
+    $entityData = $this->getEntityDataByRequest($request);
+    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityData['id'];
+    return $serveAttachmentUrl;
+  }
+
 
   protected function getEntitiesByIds($request)
   {
