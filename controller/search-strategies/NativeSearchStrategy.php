@@ -141,7 +141,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
 	protected function limitEntitiesByRequest($entities,$request)
   	{
-    	$limit = $request->getParam('limit',1000);
+    	$limit = $request->getParam('limit',100);
     	$entities = array_slice($entities,0,$limit);
     	return $entities;
 	}
