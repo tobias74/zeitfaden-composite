@@ -43,24 +43,30 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	  $pool = new HttpRequestPool();
 	  
 	  $nodes = $this->getMyControllerContext()->getCompositeService()->getSubNodes();
-      foreach ($nodes as $node)
-      {
+    foreach ($nodes as $node)
+    {
 	    $r = $this->producePassOnHttpRequest($node,$request);
-		$pool->attach($r);
-      }
+      $pool->attach($r);
+    }
 	  
 	  $pool->send();
 	  
       
-      foreach ($pool as $r)
+    foreach ($pool as $r)
+    {
+      $responseHash = json_decode($r->getResponseBody(),true);
+      if (!is_array($responseHash))
       {
-        $returnEntities = array_merge($returnEntities, json_decode($r->getResponseBody(),true));
-		
+        error_log("response was an error in native search startegy: ".$responseHash);
+        //error_log(print_r($request,true));
       }
-  
-      $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
-      $returnEntities = $this->limitEntitiesByRequest($returnEntities, $request);
-		
+      $returnEntities = array_merge($returnEntities, $responseHash);
+	
+    }
+
+    $returnEntities = $this->sortEntitiesByRequest($returnEntities, $request);
+    $returnEntities = $this->limitEntitiesByRequest($returnEntities, $request);
+	
 		return $returnEntities;		
 	}
 	
@@ -148,14 +154,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
   protected function producePassOnHttpRequest($node,$request)
   {
-      $params = "";
-      foreach ($request->getParams() as $name => $value)
-      {
-        $params.=$name.'/'.urlencode($value).'/';
-      }
-  	
-      $url = $node.'/'.$request->getController().'/'.$request->getAction().'/'.$params;
-	
+	    $url = $node.$_SERVER['REDIRECT_URL'];
 	
       $requestMethods = array(
         'GET' => HttpRequest::METH_GET,
@@ -167,7 +166,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
       $r->addQueryData($_GET);
     
       switch ($_SERVER['REQUEST_METHOD']) {
-        case 'POST': 
+        case 'POST':
           $r->setPostFields($_POST);
           break;
       }

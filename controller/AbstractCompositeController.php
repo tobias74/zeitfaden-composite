@@ -23,7 +23,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
-  public function getByIdsAction()
+  final public function getByIdsAction()
   {
     $loadBalancedUrls = $this->_request->getParam('loadBalancedUrls',1);
     $returnEntities = $this->getEntitiesByIds($this->_request);
@@ -85,8 +85,14 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   {
     try
     {
-      $entityData = $this->getEntityDataByRequest($this->_request);      
-      $returnEntities = $this->attachLoadBalancedUrls(array($entityData));
+      $entityData = $this->getEntityDataByRequest($this->_request);
+      $returnEntities = array($entityData);
+      
+      $loadBalancedUrls = $this->_request->getParam('loadBalancedUrls',1);
+      if ($loadBalancedUrls)
+      {
+        $returnEntities = $this->attachLoadBalancedUrls($returnEntities);
+      }
       $this->_response->setHash($returnEntities[0]);
     }
     catch (ZeitfadenNoMatchException $e)
@@ -224,7 +230,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   
 	
 
-
   protected function isElasticSearch($request)
   {
     $engine = $this->_request->getParam('engine', 'native');
@@ -248,7 +253,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   protected function getShardByUserId($userId)
   {
     $values = $this->getShardingService()->getShardDataByUserId($userId);
-    if ($values['status'] == 'not_found')
+    if (($values['status'] == 'not_found') || (!isset($values['status'])))
     {
       error_log('userid '.$userId.' was not found in the shardmaster, brute forcing it now...');
       $response = $this->getCompositeService()->whereLivesUserById($userId);

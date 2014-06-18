@@ -280,19 +280,6 @@ error_log(print_r($_POST,true));
 
 	}
 
-    protected function getShardForUserId($userId)
-	{
-		// call the shardmaster here.
-	    $url = 'http://shardmaster.butterfurz.de/shard/getShardForUser/userId/'.$userId.'/applicationId/'.$this->getApplicationId();
-	    die($url);
-	    $r = new HttpRequest($flyUrl, HttpRequest::METH_GET);
-	    $r->send();
-	    
-	    $values = json_decode($r->getResponseBody(),true);
-
-
-
-	}
 
 	protected function searchShardForUserId($userId)
 	{

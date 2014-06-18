@@ -25,13 +25,15 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
 		// we will load stations here in multiple reuqests, make them distinct, every new request filtering out the previous users
 		// then we will load the corresponding users-data and join the thing.
 	    
-	    $spec = $this->getMyControllerContext()->getSpecificationByRequest($request);
+	    $stationSpec = $this->getMyControllerContext()->getStationSpecificationByRequest($request);
+      $userSpec = $this->getMyControllerContext()->getUserSpecificationByRequest($request);
 
 		$allStations = array();
 		
 		do
 		{
-			$stations = $this->getUserStationsBySpecification($spec);
+			$stations = $this->getUserStationsBySpecification($userSpec, $stationSpec);
+
 
       $groupedStations = __::groupBy($stations, function($station){return $station['userId'];});
       
@@ -42,11 +44,13 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
 				return $station['userId'];	
 			});
 			
+
 			foreach ($userIds as $userId)
 			{
-				$criteria = $spec->getCriteria();
+				$criteria = $stationSpec->getCriteria();
 				$criteria = $criteria->logicalAnd(new \VisitableSpecification\NotEqualCriteria('userId',$userId));
-				$spec->setCriteria($criteria);
+				$stationSpec->setCriteria($criteria);
+
 			}
 			
 		}
@@ -90,7 +94,7 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
 	
 	public function getStationsByRequest($request)
 	{
-	    $spec = $this->getMyControllerContext()->getSpecificationByRequest($request);
+	    $spec = $this->getMyControllerContext()->getStationSpecificationByRequest($request);
 		return $this->getStationsBySpecification($spec);	    
 	}
 	
@@ -135,31 +139,33 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
 	
 
 
-	protected function getUserStationsBySpecification($spec)
+	protected function getUserStationsBySpecification($userSpec, $stationSpec)
 	{
-	    if ($spec->hasCriteria())
+	  error_log('search users stations ');
+    //hier weioter
+	    if ($stationSpec->hasCriteria())
 	    {
 	      $whereArrayMaker = $this->getElasticSearchQueryArray();
-	      $spec->getCriteria()->acceptVisitor($whereArrayMaker);
-	      $filter = $whereArrayMaker->getArrayForCriteria($spec->getCriteria());
+	      $stationSpec->getCriteria()->acceptVisitor($whereArrayMaker);
+	      $filter = $whereArrayMaker->getArrayForCriteria($stationSpec->getCriteria());
 	    }
 	    else 
 	    {
 	      $filter=array();  
 	    }
 	    
-	    if ($spec->hasOrderer())
+	    if ($stationSpec->hasOrderer())
 	    {
 	      $sortArrayMaker = $this->getElasticSearchSortArray();
-	      $spec->getOrderer()->acceptVisitor($sortArrayMaker);
-	      $sortHash = $sortArrayMaker->getArrayForOrderer($spec->getOrderer());
+	      $stationSpec->getOrderer()->acceptVisitor($sortArrayMaker);
+	      $sortHash = $sortArrayMaker->getArrayForOrderer($stationSpec->getOrderer());
 	    }
 	    else 
 	    {
 	      $sortHash = array();  
 	    }
 	
-	    $responseArray = $this->getElasticSearchService()->searchUserStations($filter,$sortHash,$spec->getLimiter());
+	    $responseArray = $this->getElasticSearchService()->searchUserStations($filter,$sortHash,$stationSpec->getLimiter());
 	    
 	
 	    $finalResponse = array();
