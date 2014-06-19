@@ -9,10 +9,45 @@ class DataMap
     {
     }
 
-    public function addColumn($columnName, $fieldName)
+    public function addColumn($columnName, $fieldName, $entityName)
     {
         $this->map[$columnName] = $fieldName;
+        $this->belongsToEntity[$columnName] = $entityName;
     }
+    
+    public function getColumnForCriteria($criteria)
+    {
+      // make this better
+      $entityName = $criteria->getEntityName();
+      $field = $criteria->getField();
+          
+      $entityHash = $this->getHashForEntity($entityName);
+      
+      $columns = array_keys($entityHash);
+      $fields = array_values($entityHash);        
+      $pos = array_search($field, $fields);
+        
+      if ($pos === false)
+      {
+          throw new \Exception('coding error. field not found for entity. '.$field.' in here: '.print_r($this->map,true));
+      }
+      return $columns[$pos];      
+    }
+
+
+    public function getHashForEntity($entityName)
+    {
+      $returnHash = array();
+      foreach($this->map as $column => $field)
+      {
+        if ($this->belongsToEntity[$column] === $entityName)
+        {
+          $returnHash[$column] = $field;
+        }
+      }      
+      return $returnHash;
+    }
+
     
     function getColumns()
     {
@@ -46,6 +81,7 @@ class DataMap
         }
         return $columns[$pos];      
     }
+
     
     public function existsColumn($column)
     {

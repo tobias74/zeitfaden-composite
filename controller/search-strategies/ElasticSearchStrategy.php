@@ -72,6 +72,7 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
     $spec->setLimiter(new \VisitableSpecification\Limiter(0,count($allStations)+1));
     $allUsers = $this->getUsersBySpecification($spec);
     
+    //the original ordering of the stations will be kept, since we join the users onto the stations.
     
     $enrichedUsers = __::map($allStations, function($station) use ($allUsers){
       $currentUserId = $station['userId'];  
@@ -142,39 +143,39 @@ class ElasticSearchStrategy extends AbstractSearchStrategy
 	protected function getUserStationsBySpecification($userSpec, $stationSpec)
 	{
 	  error_log('search users stations ');
-    //hier weioter
-	    if ($stationSpec->hasCriteria())
-	    {
-	      $whereArrayMaker = $this->getElasticSearchQueryArray();
-	      $stationSpec->getCriteria()->acceptVisitor($whereArrayMaker);
-	      $filter = $whereArrayMaker->getArrayForCriteria($stationSpec->getCriteria());
-	    }
-	    else 
-	    {
-	      $filter=array();  
-	    }
+    
+    $stationCrtiteria = $stationSpec->getCriteria();
+    $userCrtiteria = $userSpec->getCriteria();
+    $newCriteria = $stationCrtiteria->logicalAnd($userCrtiteria);
+    
+    $whereArrayMaker = $this->getElasticSearchQueryArray();
+    $newCriteria->acceptVisitor($whereArrayMaker);
+    $filter = $whereArrayMaker->getArrayForCriteria($newCriteria);
 	    
-	    if ($stationSpec->hasOrderer())
-	    {
-	      $sortArrayMaker = $this->getElasticSearchSortArray();
-	      $stationSpec->getOrderer()->acceptVisitor($sortArrayMaker);
-	      $sortHash = $sortArrayMaker->getArrayForOrderer($stationSpec->getOrderer());
-	    }
-	    else 
-	    {
-	      $sortHash = array();  
-	    }
+	  if ($stationSpec->hasOrderer())
+	  {
+	    $sortArrayMaker = $this->getElasticSearchSortArray();
+	    $stationSpec->getOrderer()->acceptVisitor($sortArrayMaker);
+	    $sortHash = $sortArrayMaker->getArrayForOrderer($stationSpec->getOrderer());
+	  }
+	  else 
+	  {
+	    $sortHash = array();  
+	  }
+		
+		error_log("this is the filter in elsticsearch");
+		error_log(print_r($filter,true));
+		
+	  $responseArray = $this->getElasticSearchService()->searchUserStations($filter,$sortHash,$stationSpec->getLimiter());
+	    
 	
-	    $responseArray = $this->getElasticSearchService()->searchUserStations($filter,$sortHash,$stationSpec->getLimiter());
+	  $finalResponse = array();
+	  foreach ($responseArray['hits']['hits'] as $index => $data)
+	  {
+	    $finalResponse[$index] = $data['_source'];
+	  }
 	    
-	
-	    $finalResponse = array();
-	    foreach ($responseArray['hits']['hits'] as $index => $data)
-	    {
-	      $finalResponse[$index] = $data['_source'];
-	    }
-	    
-	    return $finalResponse;
+	  return $finalResponse;
 		
 	}	
 

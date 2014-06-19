@@ -52,24 +52,25 @@ class CompositeDependencyConfigurator
 		
 		
     $mainDataMap = new \Zeitfaden\ElasticSearch\DataMap();
-    $mainDataMap->addColumn('id', 'id');
-    $mainDataMap->addColumn('userId', 'userId');
-    $mainDataMap->addColumn('description', 'description');
-    $mainDataMap->addColumn('publishStatus', 'publishStatus');
-    $mainDataMap->addColumn('zuluStartDateString', 'startDate');
-    $mainDataMap->addColumn('startLocation.lat', 'startLatitude');
-    $mainDataMap->addColumn('startLocation.lon', 'startLongitude');
-    $mainDataMap->addColumn('startTimezone', 'startTimezone');
-    $mainDataMap->addColumn('zuluEndDateString', 'endDate');
-    $mainDataMap->addColumn('endLocation.lat', 'endLatitude');
-    $mainDataMap->addColumn('endLocation.lon', 'endLongitude');
-    $mainDataMap->addColumn('endTimezone', 'endTimezone');
-    $mainDataMap->addColumn('startLocation', 'startLocation');
-    $mainDataMap->addColumn('endLocation', 'endLocation');
-    $mainDataMap->addColumn('startDateWithId', 'startDateWithId');
-    $mainDataMap->addColumn('fileType', 'fileType');
+    $mainDataMap->addColumn('id', 'id', 'station');
+    $mainDataMap->addColumn('userId', 'userId', 'user');
+    $mainDataMap->addColumn('description', 'description', 'station');
+    $mainDataMap->addColumn('publishStatus', 'publishStatus', 'station');
+    $mainDataMap->addColumn('zuluStartDateString', 'startDate', 'station');
+    $mainDataMap->addColumn('startLocation.lat', 'startLatitude', 'station');
+    $mainDataMap->addColumn('startLocation.lon', 'startLongitude', 'station');
+    $mainDataMap->addColumn('startTimezone', 'startTimezone', 'station');
+    $mainDataMap->addColumn('zuluEndDateString', 'endDate', 'station');
+    $mainDataMap->addColumn('endLocation.lat', 'endLatitude', 'station');
+    $mainDataMap->addColumn('endLocation.lon', 'endLongitude', 'station');
+    $mainDataMap->addColumn('endTimezone', 'endTimezone', 'station');
+    $mainDataMap->addColumn('startLocation', 'startLocation', 'station');
+    $mainDataMap->addColumn('endLocation', 'endLocation', 'station');
+    $mainDataMap->addColumn('startDateWithId', 'startDateWithId', 'station');
+    $mainDataMap->addColumn('fileType', 'fileType', 'station');
+    $mainDataMap->addColumn('userFileType', 'fileType', 'user');
     
-    $mainDataMap->addColumn('distanceToPin', 'distanceToPin');
+    $mainDataMap->addColumn('distanceToPin', 'distanceToPin','station');
 				
 		
 		

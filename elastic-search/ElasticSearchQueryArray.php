@@ -31,6 +31,21 @@ class ElasticSearchQueryArray
     }
   }
 
+  protected function getColumnForCriteria($criteria)
+  {
+    $mapper = $this->context;
+
+    if ($criteria->hasEntityName())
+    {
+      $column = $mapper->getColumnForCriteria($criteria);
+    }
+    else 
+    {
+      $column = $mapper->getColumnForField($criteria->getField());
+    }
+    return $column;      
+  }
+
   public function visitAndCriteria($andCriteria)
   {
     $firstArray = $this->getArrayForCriteria($andCriteria->getFirstCriteria());
@@ -65,8 +80,7 @@ class ElasticSearchQueryArray
   
   public function visitEqualCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'term' => array(
@@ -80,8 +94,7 @@ class ElasticSearchQueryArray
       
   public function visitGreaterThanCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'range' => array(
@@ -97,8 +110,7 @@ class ElasticSearchQueryArray
 
   public function visitGreaterOrEqualCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'range' => array(
@@ -114,8 +126,7 @@ class ElasticSearchQueryArray
   
   public function visitLessThanCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'range' => array(
@@ -131,8 +142,7 @@ class ElasticSearchQueryArray
     
   public function visitLessOrEqualCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'range' => array(
@@ -148,8 +158,7 @@ class ElasticSearchQueryArray
     
   public function visitNotEqualCriteria($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
 		'not' => array(
@@ -166,8 +175,7 @@ class ElasticSearchQueryArray
     
   public function visitCriteriaBetween($criteria)
   {
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getField());
+    $column = $this->getColumnForCriteria($criteria);
 
     $comp = array(
       'range' => array(
@@ -194,10 +202,8 @@ class ElasticSearchQueryArray
   
   public function visitWithinDistanceCriteria($criteria)
   {
+    $column = $this->getColumnForCriteria($criteria);
     
-    $mapper = $this->context;
-    $column = $mapper->getColumnForField($criteria->getGeometryField());
-
     $comp = array(
       'geo_distance' => array(
         'distance' => floatval($criteria->getMaximumDistance()),
