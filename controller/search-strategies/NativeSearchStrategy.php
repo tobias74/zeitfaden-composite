@@ -154,12 +154,15 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
   protected function producePassOnHttpRequest($node,$request)
   {
-	    $url = $node.$_SERVER['REDIRECT_URL'];
+	    $url = $node.$_SERVER['REQUEST_URI'];
 	
       $requestMethods = array(
         'GET' => HttpRequest::METH_GET,
         'POST' => HttpRequest::METH_POST
       );
+      
+      error_log('doing this '.$url);
+      error_log('having this in get: '.print_r($_GET,true));
       
       $r = new HttpRequest($url, $requestMethods[$_SERVER['REQUEST_METHOD']]);
       $r->addCookies($_COOKIE);
