@@ -1,6 +1,8 @@
 <?php 
 class UserController extends AbstractCompositeController
 {
+  protected $idName = 'userId';
+  protected $controllerPath='user';
 	
 
   protected function getEntityDataByRequest($request)
@@ -22,7 +24,10 @@ class UserController extends AbstractCompositeController
     return $this->getSearchStrategy($request)->getUsersByRequest($request);
   }
 
-
+  protected function getMyEntityDataById($id)
+  {
+    return $this->getUserDataById($id);
+  }
 
   protected function getUserDataById($userId)
   {
