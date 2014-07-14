@@ -112,20 +112,11 @@ class UserController extends AbstractCompositeController
 	
   
   
-  public function uploadAttachmentAction()
+  public function uploadProfileImageAction()
   {
-    $userId = $this->_request->getParam('userId',$this->getLoggedInUser()->getId());
-    $user = $this->getService()->getUserById($userId, $this->getLoggedInUser()->getId());
-
-    $file = new UserFile();
-    $user->setAttachment($file);
-    $this->workUploadedFile($this->_request->getUploadedFile('inputImage'), $user);
-    
-    $this->getService()->mergeUser($user);
-
+    $this->passToMyShard();
   }
   
-	
 	
 	public function getMyAccountDataAction()
 	{

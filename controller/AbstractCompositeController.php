@@ -276,6 +276,10 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   
   
 
+  protected function performQuery($requestPath)
+  {
+    return $this->getCompositeService()->performQuery($requestPath);
+  }
 
 
   
