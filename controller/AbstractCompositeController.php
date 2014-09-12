@@ -49,6 +49,7 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
   protected function getAttachmentUrlByEntityId($entityId)
   {
+    error_log('is this called Abstract COmpistie COntroller 2487687682364876876');
     $entityData = $this->getMyEntityDataById($entityId);
     $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
     return $serveAttachmentUrl;
@@ -102,36 +103,43 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     
   }
   
-  	
+
+  protected function getMyShardUrl()
+  {
+      $userId = $this->getUserSession()->getLoggedInUserId();
+      $homeShard = $this->getCompositeService()->whereLivesUserById($userId);
+      return $homeShard['shardUrl'];
+  }  	
 
 
 
   protected function passToMyShard()
-  {
-    $shardUrl = $this->getHomeShardUrl();
-    $this->passCurrentRequestToShardUrl($shardUrl);
-  }
-
-
-
-  protected function getHomeShardUrl()
   {
     if ($this->getUserSession()->isUserLoggedIn())
     {
       $userId = $this->getUserSession()->getLoggedInUserId();
       $homeShard = $this->getCompositeService()->whereLivesUserById($userId);
   
-      $returnUrl = $homeShard['shardUrl'];
+      $shardUrl = $homeShard['shardUrl'];
     }
     else
     {
-      $returnUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
+      throw new \ErrorException('this is anonymous and cant be done.');
+      //$shardUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
     }
 
-    error_log('return url from getHomeShardUrl: '.$returnUrl);
-    
-    return $returnUrl;
+
+
+    $this->passCurrentRequestToShardUrl($shardUrl);
   }
+
+
+
+
+
+
+
+
 
 
   protected function passCurrentRequestToShardUrl($shardUrl)

@@ -110,12 +110,12 @@ class CompositeDependencyConfigurator
     $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 
 
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ZeitfadenSimpleShard'));
+    
     
     $depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('ZeitfadenShardingService','ZeitfadenShardingService'));
     $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
-    //$depList->addDependency('ShardProvider', new SL\ManagedComponentProvider('Shard'));
-    // leave this in! currently we do not need the ShardProvider here, because we are composiote,
-    // but it is not nice.
+    $depList->addDependency('ShardProvider', new SL\ManagedComponentProvider('ZeitfadenSimpleShard'));
 
 
 
@@ -127,6 +127,9 @@ class CompositeDependencyConfigurator
     $depList->addDependency('ApplicationIni', new SL\UnmanagedValue($application->getApplicationIni()));
     $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
     $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+    $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
+    
+    
         
 
 

@@ -51,28 +51,116 @@ class StationController extends AbstractCompositeController
 
   public function createAction()
   {
-    $this->passToMyShard();
+    if ($this->getUserSession()->isUserLoggedIn())
+    {
+      $shardUrl = $this->getMyShardUrl();
+    }
+    else
+    {
+      $shardUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
+    }
+
+    $this->passCurrentRequestToShardUrl($shardUrl);
   }
+
+
+  public function upsertAction()
+  {
+    $this->passToAccordingShard();
+  }
+
 
   public function updateAction()
   {
-    $this->passToMyShard();
+    $this->passToAccordingShard();
   }
 
   public function deleteAction()
   {
-    $this->passToMyShard();
+    $this->passToAccordingShard();
   }
 
-	public function upsertAction()
-	{
-    $this->passToMyShard();
- 	}
   
   
+  private function passToAccordingShard()
+  {
+    if ($this->getUserSession()->isUserLoggedIn())
+    {
+      $shardUrl = $this->getMyShardUrl();
+    }
+    else
+    {
+      $stationId = $this->_request->getParam('stationId',0);
+      $shardUrl = $this->getShardUrlByStationId($stationId);
+    }
+    
+    $this->passCurrentRequestToShardUrl($shardUrl);
+  }
   
 
 
+  protected function getShardUrlByStationId($stationId)
+  {
+    $entities = array();
+    $pool = new HttpRequestPool();
+    
+    $nodes = $this->getCompositeService()->getSubNodes();
+    foreach ($nodes as $node)
+    {
+      $r = $this->produceRequestForStation($node,$stationId);
+      $pool->attach($r);
+    }
+
+    
+    $pool->send();
+    
+    foreach ($pool as $r)
+    {
+      $responseHash = json_decode($r->getResponseBody(),true);
+      if (!is_array($responseHash))
+      {
+        error_log("response was an error in native search startegy: ".$responseHash);
+        //error_log(print_r($request,true));
+      }
+      if ($r->getResponseCode() === 200)
+      {
+        $entities[] = $responseHash;
+      }
+    }
+    
+    if (count($entities) > 1)
+    {
+      throw new \ErrorException('found too many');
+    }
+    elseif (count($entities) === 0)
+    {
+      throw new \ZeitfadenNoMatchException('did not find any, but thats ok here');
+    }
+    else
+    {
+      $entity = $entities[0];
+      $shardId = $entity['shardId'];
+      
+      
+      //die($this->getCompositeService()->getShardUrlById($shardId));
+      //die($entity['shardUrl']);
+      return $entity['shardUrl'];
+      
+      //return $this->getCompositeService()->getShardUrlById($shardId);
+    }
+    
+  }
+  
+  
+  private function produceRequestForStation($node,$stationId)
+  {
+      $url = $node.'/station/getById/stationId/'.$stationId;
+      
+      $r = new HttpRequest($url, HttpRequest::METH_GET);
+      $r->addCookies($_COOKIE);
+    
+      return $r;    
+  }
   
 
 
