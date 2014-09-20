@@ -17,7 +17,16 @@ class CompositeDependencyConfigurator
 		
 		
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('ZeitfadenSystemWrapper'));
-				
+			
+		
+		
+		
+		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('RedisClient','\Predis\Client'));
+		
+
+
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('ReverseGeocoderCache','\ReverseGeocoderCache\CacheFrontEnd'));
+		
 		
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('SqlProfiler','\Tiro\Profiler'));
 		
@@ -38,7 +47,7 @@ class CompositeDependencyConfigurator
     $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
         
     
-		$parameterArray = new SL\ParameterArray();
+	$parameterArray = new SL\ParameterArray();
     $parameter = new SL\ManagedParameter('DatabaseProvider');
     $parameterArray->appendParameter($parameter);
 		
@@ -83,6 +92,8 @@ class CompositeDependencyConfigurator
         $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
         $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
         $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+        $depList->addDependency('RedisClientProvider', new SL\ManagedComponentProvider('RedisClient'));
+        $depList->addDependency('ReverseGeocoderCacheProvider', new SL\ManagedComponentProvider('ReverseGeocoderCache'));
 		
 						
 
@@ -93,7 +104,9 @@ class CompositeDependencyConfigurator
         $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
         $depList->addDependency('ElasticSearchStrategyProvider', new SL\ManagedComponentProvider('ElasticSearchStrategy'));
         $depList->addDependency('NativeSearchStrategyProvider', new SL\ManagedComponentProvider('NativeSearchStrategy'));
-		    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+  	    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+        $depList->addDependency('RedisClientProvider', new SL\ManagedComponentProvider('RedisClient'));
+        $depList->addDependency('ReverseGeocoderCacheProvider', new SL\ManagedComponentProvider('ReverseGeocoderCache'));
 		
 		
 

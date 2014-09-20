@@ -14,6 +14,22 @@ class StationController extends AbstractCompositeController
 			);
 	}
 
+  public function testAction()
+  {
+    echo $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+    die();
+    echo utf8_decode($this->produceLocationDescription(54,10));
+    die();
+    
+    $cache = $this->getReverseGeocoderCache();
+    $cache->set(47.6,22, "tobias asd ist here");
+    echo $cache->get(47.6,22.0001);
+    echo "<br>";
+  	echo $this->getRedisClient()->get('tobias');
+	  die();
+  }
+  
+  
   protected function getEntityDataByRequest($request)
   {
     $userId = $request->getParam('userId',0);
@@ -38,35 +54,46 @@ class StationController extends AbstractCompositeController
 
   protected function getEntitiesByRequest($request)
   {
-    return $this->getSearchStrategy($request)->getStationsByRequest($request);
+    $entityData = $this->getSearchStrategy($request)->getStationsByRequest($request);
+    
+    foreach ($entityData as &$data)
+    {
+      $data['locationDescription'] = $this->getLocationDescription($data['startLatitude'], $data['startLongitude']);
+    }
+    
+    return $entityData;
   }
   
-
-  
-
-
-
-	
-		
 
   public function createAction()
   {
     if ($this->getUserSession()->isUserLoggedIn())
     {
-      $shardUrl = $this->getMyShardUrl();
+      $this->passCurrentRequestToShardUrl( $this->getMyShardUrl() );
     }
     else
     {
-      $shardUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
+      $this->passToRandomShard();
     }
+  }
 
+  private function passToRandomShard()
+  {
+    $shardUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
     $this->passCurrentRequestToShardUrl($shardUrl);
   }
 
-
   public function upsertAction()
   {
-    $this->passToAccordingShard();
+    if ($this->getUserSession()->isUserLoggedIn())
+    {
+      $this->passCurrentRequestToShardUrl( $this->getMyShardUrl() );
+    }
+    else
+    {
+      throw new \ErrorException('need userid for oauth upsert');
+    }
+    
   }
 
 
@@ -101,54 +128,9 @@ class StationController extends AbstractCompositeController
 
   protected function getShardUrlByStationId($stationId)
   {
-    $entities = array();
-    $pool = new HttpRequestPool();
-    
-    $nodes = $this->getCompositeService()->getSubNodes();
-    foreach ($nodes as $node)
-    {
-      $r = $this->produceRequestForStation($node,$stationId);
-      $pool->attach($r);
-    }
-
-    
-    $pool->send();
-    
-    foreach ($pool as $r)
-    {
-      $responseHash = json_decode($r->getResponseBody(),true);
-      if (!is_array($responseHash))
-      {
-        error_log("response was an error in native search startegy: ".$responseHash);
-        //error_log(print_r($request,true));
-      }
-      if ($r->getResponseCode() === 200)
-      {
-        $entities[] = $responseHash;
-      }
-    }
-    
-    if (count($entities) > 1)
-    {
-      throw new \ErrorException('found too many');
-    }
-    elseif (count($entities) === 0)
-    {
-      throw new \ZeitfadenNoMatchException('did not find any, but thats ok here');
-    }
-    else
-    {
-      $entity = $entities[0];
-      $shardId = $entity['shardId'];
-      
-      
-      //die($this->getCompositeService()->getShardUrlById($shardId));
-      //die($entity['shardUrl']);
-      return $entity['shardUrl'];
-      
-      //return $this->getCompositeService()->getShardUrlById($shardId);
-    }
-    
+    $stationData = $this->getStationDataById($stationId);
+    return $stationData['shardUrl'];
+    //return $this->getCompositeService()->getShardUrlById($shardId);
   }
   
   
@@ -185,56 +167,48 @@ class StationController extends AbstractCompositeController
     }
     else 
     {
+      $entities = array();
+      $pool = new HttpRequestPool();
+      
       $nodes = $this->getCompositeService()->getSubNodes();
-      $returnEntities = array();
       foreach ($nodes as $node)
       {
-        $returnEntities = array_merge($returnEntities, $this->getEntitiesOfNodeById($node,$stationId));
+        $r = $this->produceRequestForStation($node,$stationId);
+        $pool->attach($r);
       }
-        
-      if (count($returnEntities) > 1)
-      {
-        throw new \ErrorException('found too many.');
-      }
-      else if (count($returnEntities) === 0)
-      {
-        throw new ZeitfadenNoMatchException();
-      }
-      else 
-      {
-        $entityData = $returnEntities[0];
-        return $entityData;
-      }
-    }
-  }
-
-
-
-
-  protected function getEntitiesOfNodeById($node,$id)
-  {
-    $url = $node.'/station/getById/stationId/'.$id;
-    //die($url);
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->addCookies($_COOKIE);
-    $r->send();
-
-    if ($r->getResponseCode() == 404)
-    {
-      return array();
-    }
-    else
-    {
-      $values = json_decode($r->getResponseBody(),true);
-      $values['shardUrl'] = substr($node,7);
       
-      return array($values);
+      $pool->send();
+      foreach ($pool as $r)
+      {
+        $responseHash = json_decode($r->getResponseBody(),true);
+        if (!is_array($responseHash))
+        {
+          error_log("response was an error in native search startegy: ".$responseHash);
+          //error_log(print_r($request,true));
+        }
+        if ($r->getResponseCode() === 200)
+        {
+          $entities[] = $responseHash;
+        }
+      }
+      
+      if (count($entities) > 1)
+      {
+        throw new \ErrorException('found too many');
+      }
+      elseif (count($entities) === 0)
+      {
+        throw new \ZeitfadenNoMatchException('did not find any, but thats ok here');
+      }
+      else
+      {
+        $entity = $entities[0];
+        //$shardId = $entity['shardId'];
+      }
+      
+      return $entity;
     }
   }
-
-
-
-
 
 }
 

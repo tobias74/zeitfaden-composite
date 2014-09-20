@@ -3,6 +3,9 @@ use SugarLoaf as SL;
 
 abstract class AbstractCompositeController extends AbstractZeitfadenController
 {
+  protected $redisClient = false;
+  protected $reverseGeocoderCache = false;
+  	
 
   protected function getUniqueId()
   {
@@ -11,6 +14,11 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
       return $uid;
   }
 
+  protected function getBrowserLanguage()
+  {
+    $lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+    return $lang;
+  }
 
   public function getProfiler()
   {
@@ -21,6 +29,71 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   {
     $this->profiler = $val; 
   }
+
+  public function setRedisClientProvider($val)
+  {
+  	$this->redisClientProvider = $val;
+  }
+
+  protected function getRedisClient()
+  {
+  	if (!$this->redisClient)
+	{
+		$map = array(
+			'tcp' => 'tcp',
+			'host' => $this->getApplication()->getConfig()->redisHost,
+			'port' => 6379
+		);
+		
+		$this->redisClient = $this->redisClientProvider->provide($map);
+	}
+  	return $this->redisClient;
+  }
+
+
+
+
+  public function setReverseGeocoderCacheProvider($val)
+  {
+    $this->reverseGeocoderCacheProvider = $val;
+  }
+
+  protected function getReverseGeocoderCache()
+  {
+    $prefix = "GEOCODING-lang-".$this->getBrowserLanguage();
+    if (!$this->reverseGeocoderCache)
+    {
+      $this->reverseGeocoderCache = $this->reverseGeocoderCacheProvider->provide($this->getRedisClient(),50,$prefix);
+    }
+    return $this->reverseGeocoderCache;
+  }
+
+
+
+  protected function getLocationDescription($latitude,$longitude)
+  {
+    if ($this->getReverseGeocoderCache()->exists($latitude,$longitude))
+    {
+      return $this->getReverseGeocoderCache()->get($latitude,$longitude);
+    }
+    else 
+    {
+      $description = $this->produceLocationDescription($latitude,$longitude);
+      $this->getReverseGeocoderCache()->get($latitude,$longitude,$description);
+      return $description;
+    }
+  }
+
+
+  protected function produceLocationDescription($latitude,$longitude)
+  {
+    $url = "http://maps.googleapis.com/maps/api/geocode/json?latlng=".$latitude.",".$longitude."&language=".$this->getBrowserLanguage()."&sensor=true";
+    $dataString = @file_get_contents($url);
+    $data = json_decode($dataString,true);
+    return $data['results'][0]['formatted_address'];
+  }
+
+
 
 
   final public function getByIdsAction()
@@ -161,8 +234,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     switch ($requestMethod)
     {
       case 'POST':
-        error_log('passing along a post');
-        error_log(print_r($_POST,true));
+        //error_log('passing along a post');
+        //error_log(print_r($_POST,true));
         $request->setPostFields($_POST);
         foreach ($_FILES as $paramName => $file)
         {
