@@ -24,55 +24,15 @@ class CompositeConfigLoader
 	}
 
 
-  public function loadConfiguration($hostUrl,$applicationId, $configInstance )
+  public function loadConfiguration($iniConfiguration, $config )
   {
-  	$config = $configInstance;
-    $config->mongoDbConfig->dbName = $applicationId;
+    $config->mongoDbConfig->dbName = $iniConfiguration['application_id'];
     $config->mongoDbConfig->serverUrl = 'services.zeitfaden.com';
     $config->redisHost = 'services.zeitfaden.com';
-  	
+  	$config->subNodes = $iniConfiguration['sub_nodes'];
+	
+	$config->frontEndUrls = $iniConfiguration['front_end_urls'];
 
-    switch ($hostUrl)
-    {
-      case "test.zeitfaden.de":
-      case "test.zeitfaden.com":
-      case "srv_1_test.zeitfaden.com":
-      case "srv_2_test.zeitfaden.com":
-      case "srv_3_test.zeitfaden.com":
-      case "srv_4_test.zeitfaden.com":
-        
-        $config->subNodes = array(
-          'http://test.db-shard-one.zeitfaden.com',
-          'http://test.db-shard-two.zeitfaden.com'
-        );
-
-        break;
-  
-      case "www.zeitfaden.de":
-      case "www.zeitfaden.com":
-        die('in application, no live yet.');
-        break;
-        
-      case "live.zeitfaden.com":
-      case "live.zeitfaden.de":
-      case "livetest.zeitfaden.de":
-      case "livetest.zeitfaden.com":
-      case "srv_1_live.zeitfaden.com":
-      case "srv_2_live.zeitfaden.com":
-      case "srv_3_live.zeitfaden.com":
-      case "srv_4_live.zeitfaden.com":
-        $config->subNodes = array(
-          'http://live.db-shard-one.zeitfaden.com',
-          'http://live.db-shard-two.zeitfaden.com'
-        );
-                
-        break;
-        
-      default:
-        throw new \ErrorException("no configuration for this domain: ".$hostUrl);
-        break;
-        
-    }
 
 
     return $config;

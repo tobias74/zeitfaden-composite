@@ -40,7 +40,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
       $returnEntities = array();
 
 
-	  $pool = new HttpRequestPool();
+	  $pool = new \HttpRequestPool();
 	  
 	  $nodes = $this->getMyControllerContext()->getCompositeService()->getSubNodes();
     foreach ($nodes as $node)

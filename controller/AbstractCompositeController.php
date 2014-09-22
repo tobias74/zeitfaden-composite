@@ -72,14 +72,30 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 
   protected function getLocationDescription($latitude,$longitude)
   {
-    if ($this->getReverseGeocoderCache()->exists($latitude,$longitude))
+    $timer = $this->getProfiler()->startTimer('getting location description from redis');
+    $value = $this->getReverseGeocoderCache()->get($latitude,$longitude);
+    $timer->stop();
+    if ($value != "")  
+//    if ($this->getReverseGeocoderCache()->exists($latitude,$longitude))
     {
-      return $this->getReverseGeocoderCache()->get($latitude,$longitude);
+      //$timer = $this->getProfiler()->startTimer('getting location description from redis');
+      //$value = $this->getReverseGeocoderCache()->get($latitude,$longitude);
+      //$timer->stop();
+      return $value;
     }
     else 
     {
-      $description = $this->produceLocationDescription($latitude,$longitude);
-      $this->getReverseGeocoderCache()->get($latitude,$longitude,$description);
+      try
+      {
+        $description = $this->produceLocationDescription($latitude,$longitude);
+        $this->getReverseGeocoderCache()->set($latitude,$longitude,$description);
+      }
+      catch (\ErrorException $e)
+      {
+        error_log('no location from google.');
+        $description = "";
+      }
+      
       return $description;
     }
   }
@@ -118,6 +134,13 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     $this->_response->setHash(array_values($returnEntities));
   }
 
+  public function reverseGeoCodeAction()
+  {
+    $latitude = $this->_request->getParam('latitude',0);
+    $longitude = $this->_request->getParam('longitude',0);
+    
+    $this->_response->appendValue('description',$this->getLocationDescription($latitude,$longitude));
+  }
 
 
   protected function getAttachmentUrlByEntityId($entityId)

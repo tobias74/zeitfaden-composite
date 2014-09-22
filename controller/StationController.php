@@ -16,17 +16,15 @@ class StationController extends AbstractCompositeController
 
   public function testAction()
   {
-    echo $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-    die();
-    echo utf8_decode($this->produceLocationDescription(54,10));
-    die();
-    
-    $cache = $this->getReverseGeocoderCache();
-    $cache->set(47.6,22, "tobias asd ist here");
-    echo $cache->get(47.6,22.0001);
-    echo "<br>";
-  	echo $this->getRedisClient()->get('tobias');
-	  die();
+    /*
+    $timer = $this->getProfiler()->startTimer('getting the redis????');
+    $this->getRedisClient()->get('tobias');
+    $timer->stop();
+
+    $timer = $this->getProfiler()->startTimer('again getting the redis????');
+    $this->getRedisClient()->get('tobias');
+    $timer->stop();
+    */
   }
   
   
@@ -56,10 +54,14 @@ class StationController extends AbstractCompositeController
   {
     $entityData = $this->getSearchStrategy($request)->getStationsByRequest($request);
     
+	// this should not be done here, becuase it might not be the root/node
+    $timer = $this->getProfiler()->startTimer('getting location descriptions');    
     foreach ($entityData as &$data)
     {
-      $data['locationDescription'] = $this->getLocationDescription($data['startLatitude'], $data['startLongitude']);
+      //$data['startLocationDescription'] = $this->getLocationDescription($data['startLatitude'], $data['startLongitude']);
+      //$data['endLocationDescription'] = $this->getLocationDescription($data['endLatitude'], $data['endLongitude']);
     }
+    $timer->stop();
     
     return $entityData;
   }

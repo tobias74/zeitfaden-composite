@@ -24,6 +24,10 @@ class CompositeConfig
       return $this->subNodes;
   }
 
+  public function getFrontEndUrls()
+  {
+  	return $this->frontEndUrls;
+  }
 
 
   public function getMongoDbConfig()

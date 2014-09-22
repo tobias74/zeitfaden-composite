@@ -13,7 +13,6 @@ class CompositeDependencyConfigurator
 
 
       
-    $depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('Facebook','Facebook', new SL\ConstantParameterArray(array($application->getFacebookConfig()))));
 		
 		
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('ZeitfadenSystemWrapper'));
@@ -137,7 +136,6 @@ class CompositeDependencyConfigurator
 
     $depList = $dm->registerDependencyManagedService(new SL\ManagedService('CompositeService','CompositeServiceFacade'));
     $depList->addDependency('Config', new SL\UnmanagedValue($application->getConfig()));
-    $depList->addDependency('ApplicationIni', new SL\UnmanagedValue($application->getApplicationIni()));
     $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
     $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
     $depList->addDependency('ShardingService', new SL\ManagedComponent('ZeitfadenShardingService'));
@@ -148,7 +146,7 @@ class CompositeDependencyConfigurator
 
     $depList = $dm->registerDependencyManagedService(new SL\ManagedService('UserSessionRecognizer','UserSessionRecognizer'));
     $depList->addDependency('OAuth2Service', new SL\ManagedComponent('ZeitfadenOAuth2'));
-    $depList->addDependency('Facebook', new SL\ManagedComponent('Facebook'));
+    $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
 
 
 

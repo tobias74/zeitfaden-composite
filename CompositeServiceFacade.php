@@ -34,7 +34,7 @@ class CompositeServiceFacade
   
   public function getFrontEndUrls()
   {
-    return $this->applicationIni['front_end_urls'];
+    return $this->getConfig()->getFronEndUrls();
   }
 
   public function getProfiler()
