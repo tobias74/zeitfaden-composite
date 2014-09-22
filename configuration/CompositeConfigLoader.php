@@ -30,6 +30,7 @@ class CompositeConfigLoader
     $config->mongoDbConfig->serverUrl = 'services.zeitfaden.com';
     $config->redisHost = 'services.zeitfaden.com';
   	$config->subNodes = $iniConfiguration['sub_nodes'];
+	$config->elasticSearchHost = $iniConfiguration['elastic_search_host'];
 	
 	$config->frontEndUrls = $iniConfiguration['front_end_urls'];
 

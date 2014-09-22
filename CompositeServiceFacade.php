@@ -27,10 +27,6 @@ class CompositeServiceFacade
 		return $this->applicationId;
 	}
 
-  public function setApplicationIni($val)
-  {
-    $this->applicationIni = $val;
-  }
   
   public function getFrontEndUrls()
   {

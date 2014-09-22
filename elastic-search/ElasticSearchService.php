@@ -33,10 +33,8 @@ class ElasticSearchService
 
   protected function getElasticSearchConfiguration()
   {
-    $values = $this->getApplication()->getApplicationIni();
-    
     return array(
-      'host' => $values['elastic_search_host']
+      'host' => $this->getApplication()->getConfig()->getElasticSearchHost()
     );
   }
 
@@ -45,7 +43,7 @@ class ElasticSearchService
     $values = $this->getApplication()->getApplicationIni();
     
     return array(
-      'hosts' => array($values['elastic_search_host'])
+      'host' => $this->getApplication()->getConfig()->getElasticSearchHost()
     );
   }
 

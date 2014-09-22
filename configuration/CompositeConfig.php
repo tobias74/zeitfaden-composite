@@ -29,6 +29,10 @@ class CompositeConfig
   	return $this->frontEndUrls;
   }
 
+  public function getElasticSearchHost()
+  {
+  	return $this->elasticSearchHost;
+  }
 
   public function getMongoDbConfig()
   {
