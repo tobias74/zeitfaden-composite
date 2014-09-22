@@ -31,7 +31,7 @@ class UserController extends AbstractCompositeController
 
   protected function getUserDataById($userId)
   {
-    $shardData = $this->getShardByUserId($userId);
+    $shardData = $this->getShardDataByUserId($userId);
     $url = 'http://'.$shardData['shardUrl'].'/user/getById/userId/'.$userId;
     
     //echo $url;

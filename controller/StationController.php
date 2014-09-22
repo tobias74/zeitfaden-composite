@@ -132,7 +132,6 @@ class StationController extends AbstractCompositeController
   {
     $stationData = $this->getStationDataById($stationId);
     return $stationData['shardUrl'];
-    //return $this->getCompositeService()->getShardUrlById($shardId);
   }
   
   
@@ -152,18 +151,20 @@ class StationController extends AbstractCompositeController
   {
     if ($userId != false)
     {
-      $shardData = $this->getShardByUserId($userId);
+      $shardData = $this->getShardDataByUserId($userId);
       $url = 'http://'.$shardData['shardUrl'].'/station/getById/stationId/'.$stationId.'/userId/'.$userId;
+
       
       $r = new HttpRequest($url, HttpRequest::METH_GET);
       $r->addCookies($_COOKIE);
       $r->send();
       $values = json_decode($r->getResponseBody(),true);
+
       
       $returnValues = $values;
       
       $returnValues['shardUrl'] = $shardData['shardUrl'];
-  
+
       return $returnValues;
       
     }

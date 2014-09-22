@@ -30,7 +30,7 @@ class CompositeServiceFacade
   
   public function getFrontEndUrls()
   {
-    return $this->getConfig()->getFronEndUrls();
+    return $this->getConfig()->getFrontEndUrls();
   }
 
   public function getProfiler()
@@ -43,15 +43,6 @@ class CompositeServiceFacade
     $this->profiler = $val; 
   }
 
-  public function setShardingService($val)
-  {
-    $this->shardingService = $val;
-  }
-  
-  public function getShardingService()
-  {
-    return $this->shardingService;
-  }
 
 
   public function getRandomSubNode()
@@ -151,10 +142,6 @@ class CompositeServiceFacade
 	}
 
 
-  public function getShardUrlById($shardId)
-  {
-    return $this->getShardingService()->getShardById($shardId)->url;
-  }
 
 
 

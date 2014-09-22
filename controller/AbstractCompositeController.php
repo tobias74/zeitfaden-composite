@@ -51,8 +51,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
-
-
   public function setReverseGeocoderCacheProvider($val)
   {
     $this->reverseGeocoderCacheProvider = $val;
@@ -68,19 +66,13 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $this->reverseGeocoderCache;
   }
 
-
-
   protected function getLocationDescription($latitude,$longitude)
   {
     $timer = $this->getProfiler()->startTimer('getting location description from redis');
     $value = $this->getReverseGeocoderCache()->get($latitude,$longitude);
     $timer->stop();
     if ($value != "")  
-//    if ($this->getReverseGeocoderCache()->exists($latitude,$longitude))
     {
-      //$timer = $this->getProfiler()->startTimer('getting location description from redis');
-      //$value = $this->getReverseGeocoderCache()->get($latitude,$longitude);
-      //$timer->stop();
       return $value;
     }
     else 
@@ -151,7 +143,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $serveAttachmentUrl;
   }
 
-
   
   protected function attachLoadBalancedUrls($returnEntities)
   {
@@ -174,9 +165,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $returnEntities;
   }
 
-
-
-	
 
   public function getByIdAction()
   {
@@ -221,20 +209,10 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     else
     {
       throw new \ErrorException('this is anonymous and cant be done.');
-      //$shardUrl = substr($this->getCompositeService()->getRandomSubNode(),7);
     }
-
-
 
     $this->passCurrentRequestToShardUrl($shardUrl);
   }
-
-
-
-
-
-
-
 
 
 
@@ -318,21 +296,8 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     {
       $this->_response->addHeader('Set-Cookie: '.http_build_cookie((array)$cookie));
     }
-
-
-
-
   }
 
-
-
-
-  
-  
-  
-  
-  
-	
 
   protected function isElasticSearch($request)
   {
@@ -354,28 +319,34 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 	}
 
 
-  protected function getShardByUserId($userId)
+  protected function getShardDataByUserId($userId)
   {
-    $values = $this->getShardingService()->getShardDataByUserId($userId);
-    if (($values['status'] == 'not_found') || (!isset($values['status'])))
+    try
+    {
+      $values = $this->getShardingService()->getShardByUserId($userId);
+      return array(
+        'shardId' => $values['shardId'],
+        'shardUrl' => $values['shardUrl']
+      );
+    }
+    catch (ZeitfadenNoMatchException $e)
     {
       error_log('userid '.$userId.' was not found in the shardmaster, brute forcing it now...');
-      $response = $this->getCompositeService()->whereLivesUserById($userId);
-  
-      return array(
-        'shardId' => $response['shardId'],
-        'shardUrl' => $response['shardUrl']
-      );
+      try 
+      {
+        $response = $this->getCompositeService()->whereLivesUserById($userId);
+        return array(
+          'shardId' => $response['shardId'],
+          'shardUrl' => $response['shardUrl']
+        );
+      }
+      catch (ZeitfadenNoMatchException $e)
+      {
+        error_log('this user does not live in any of my shards...');
+        throw new ErrorException('unkonw user.');
+      }
+      
     }
-    else
-    {
-      return array(
-        'shardId' => $values['shard']['shardId'],
-        'shardUrl' => $values['shard']['url']
-      );
-  
-    }
-  
   }
   
   
@@ -385,11 +356,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
     return $this->getCompositeService()->performQuery($requestPath);
   }
 
-
-  
-  
-  	
-	
   
 	protected function declareActionsThatNeedLogin()
 	{
@@ -397,12 +363,10 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
 	}
 	
 	
-	
 	public function getRequestParameter($name,$default)
 	{
 		return $this->_request->getParam($name,$default);
 	}
-	
 	
 	
   public function setApplicationId($val)
@@ -457,8 +421,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   
   
 }
-
-
 
 
 

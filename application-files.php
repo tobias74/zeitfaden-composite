@@ -68,6 +68,7 @@ require_once($baseDir.'/configuration/CompositeDependencyConfigurator.php');
 //require_once($baseDir.'/access-control/UserSession.php');
 
 require_once($baseDir.'/CompositeServiceFacade.php');
+require_once($baseDir.'/ZeitfadenShardingService.php');
 
 require_once($baseDir.'/controller/AbstractCompositeController.php');
 require_once($baseDir.'/controller/UserController.php');
