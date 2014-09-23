@@ -125,6 +125,7 @@ class CompositeDependencyConfigurator
     
     $depList = $dm->registerDependencyManagedService(new SL\ManagedSingleton('ZeitfadenShardingService','ZeitfadenShardingService'));
     $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
+    $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
 
 
 

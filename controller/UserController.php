@@ -143,7 +143,7 @@ class UserController extends AbstractCompositeController
 		if (!$this->isEmailRegistered($inputEmail))
 		{
 			$shardData = $this->getShardingService()->getLeastUsedShard();
-		    $shardUrl = $shardData['url'];
+		    $shardUrl = $shardData['shardUrl'];
 		    $shardId = $shardData['shardId'];
 
     		$this->passCurrentRequestToShardUrl($shardUrl);
@@ -151,9 +151,7 @@ class UserController extends AbstractCompositeController
 		    $responseHash = $this->_response->getHash();
 		    $userId = $responseHash['user']['id'];
 
-		    $values = $this->getShardingService()->assignUserToShard($userId,$shardId);
-		    $this->_response->appendValue('shardRequestStatus',$values['status']);
-			
+		    $this->getShardingService()->assignUserToShard($userId,$shardId);
 		}
 		else
 		{

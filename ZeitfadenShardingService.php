@@ -16,53 +16,89 @@ class ZeitfadenShardingService
   {
     return $this->applicationId;
   }
+  
+  public function setDatabase($val)
+  {
+    $this->database = $val;
+  }
+  
+  protected function getMongoDatabase()
+  {
+    return $this->database->getMongoDbService();
+  }
 
+  protected function getUserToShardCollection()
+  {
+    return new MongoCollection($this->getMongoDatabase(), 'users_to_shards');
+  }
+
+  protected function getShardCollection()
+  {
+    return new MongoCollection($this->getMongoDatabase(), 'shards');
+  }
   
   public function getShardByUserId($userId)
   {
     if (!isset($this->cachedByUserId[$userId]))
     {
-      $url = 'http://shardmaster.zeitfaden.com/shard/getShardForUser/userId/'.$userId.'/applicationId/'.$this->applicationId;
-      $r = new HttpRequest($url, HttpRequest::METH_GET);
-      $r->send();
+      $assoc = $this->getUserToShardCollection()->findOne(array(
+        'userId' => $userId
+      ));
       
-      $values = json_decode($r->getResponseBody(),true);
-      if ($values === null)
+      if ($assoc === null)
       {
         throw new ZeitfadenNoMatchException('did not find the shard');
       }
       
-      $shard = array();
-      $shard['shardId'] = $values['shard']['shardId'];
-      $shard['shardUrl'] = $values['shard']['url'];
+      $shard = $this->getShardCollection()->findOne(array(
+        'shardId' => $assoc['shardId']
+      ));
+      
+      if ($shard === null)
+      {
+        throw new \ErrorException('did not find shard by ID, that is strange.');        
+      }
+      
       $this->cachedByUserId[$userId] = $shard;
     }
     return $this->cachedByUserId[$userId];
   }
     
-    
-  
-  public function getLeastUsedShard()
-  {
-    $url = 'http://shardmaster.zeitfaden.com/shard/getLeastUsedShard/applicationId/'.$this->getApplicationId();
-    $r = new HttpRequest($url, HttpRequest::METH_GET);
-    $r->send();
-    $values = json_decode($r->getResponseBody(),true);
-    //$shardUrl = $values['shard']['url'];
-    //$shardId = $values['shard']['shardId'];
-    return $values['shard'];
-
-  }
 
 
   public function assignUserToShard($userId,$shardId)
   {
-      $url = 'http://shardmaster.zeitfaden.com/shard/assignUserToShard/shardId/'.$shardId.'/userId/'.$userId.'/applicationId/'.$this->getApplicationId();
-      $r = new HttpRequest($url, HttpRequest::METH_POST);
-      $r->send();
-      $values = json_decode($r->getResponseBody(),true);
-      return $values;
+    $status = $this->getUserToShardCollection()->insert(array(
+      'userId' => $userId,
+      'shardId' => $shardId
+    ));
+    
+    if ($status === false)
+    {
+      throw new \ErrorException('assigning user to shard did fail '.$userId.' ... '.$shardId);
+    }
   }
+
+
+
+    
+  
+  public function getLeastUsedShard()
+  {
+    $cursor = $this->getShardCollection()->find(array());
+    
+    $shards = array();
+    foreach ($cursor as $doc){
+      $shards[] = $doc;
+    }    
+    
+    shuffle($shards);
+    
+    return $shards[0];
+
+  }
+
+
 
   
 }
