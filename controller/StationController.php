@@ -13,21 +13,9 @@ class StationController extends AbstractCompositeController
 			'create'
 			);
 	}
-
-  public function testAction()
-  {
-    /*
-    $timer = $this->getProfiler()->startTimer('getting the redis????');
-    $this->getRedisClient()->get('tobias');
-    $timer->stop();
-
-    $timer = $this->getProfiler()->startTimer('again getting the redis????');
-    $this->getRedisClient()->get('tobias');
-    $timer->stop();
-    */
-  }
   
-  
+  // the following two are optimizations
+  /*  
   protected function getEntityDataByRequest($request)
   {
     $userId = $request->getParam('userId',0);
@@ -43,6 +31,14 @@ class StationController extends AbstractCompositeController
     $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityData['id'];
     return $serveAttachmentUrl;
   }
+  */
+  
+
+  protected function getMyEntityDataById($id)
+  {
+    return $this->getStationDataById($id);
+  }
+  
 
 
   protected function getEntitiesByIds($request)
@@ -137,9 +133,10 @@ class StationController extends AbstractCompositeController
   
   private function produceRequestForStation($node,$stationId)
   {
-      $url = $node.'/station/getById/stationId/'.$stationId;
+      $url = 'http://'.$node.'/station/getById/stationId/'.$stationId;
       
       $r = new HttpRequest($url, HttpRequest::METH_GET);
+      $r->zfShardUrl = $node;
       $r->addCookies($_COOKIE);
     
       return $r;    
@@ -147,7 +144,7 @@ class StationController extends AbstractCompositeController
   
 
 
-  protected function getStationDataById($stationId, $userId = false)
+  private function getStationDataById($stationId, $userId = false)
   {
     if ($userId != false)
     {
@@ -191,6 +188,7 @@ class StationController extends AbstractCompositeController
         }
         if ($r->getResponseCode() === 200)
         {
+          $responseHash['shardUrl'] = $r->zfShardUrl;
           $entities[] = $responseHash;
         }
       }

@@ -58,9 +58,13 @@ class NativeSearchStrategy extends AbstractSearchStrategy
       if (!is_array($responseHash))
       {
         error_log("response was an error in native search startegy: ".$responseHash);
+        error_log("this is the url called: ".$r->getUrl());
         //error_log(print_r($request,true));
       }
-      $returnEntities = array_merge($returnEntities, $responseHash);
+      else 
+      {
+        $returnEntities = array_merge($returnEntities, $responseHash);
+      }
 	
     }
 
@@ -82,7 +86,6 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
 	protected function sortEntitiesByRequest($entities,$request)
 	{
-	    $datetime = $request->getParam('datetime',false);
 	    $sort = $request->getParam('sort',false);
 	    $direction = $request->getParam('direction',false);
 	    $lastId = $request->getParam('lastId',false);
@@ -103,8 +106,8 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	        $sortFieldValues = array();
 	        foreach ($entities as $key => &$entityData)
 	        {
-	          $entityData['syntheticStartDateWithId'] = $entityData['startDate'].'_'.$entityData['id'];
-	          $sortFieldValues[$key] = $entityData['syntheticStartDateWithId'];
+	          $entityData['sortDateWithId'] = $entityData['sortDateString'].'_'.$entityData['id'];
+	          $sortFieldValues[$key] = $entityData['sortDateWithId'];
 	        }  
 	        array_multisort($sortFieldValues, $sorter, $entities);
 	      }
@@ -113,7 +116,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	        $sortFieldValues = array();
 	        foreach ($entities as $key => &$entityData)
 	        {
-	          $sortFieldValues[$key] = $entityData['startDate'];
+	          $sortFieldValues[$key] = $entityData['sortDateString'];
 	        }  
 	        array_multisort($sortFieldValues, $sorter, $entities);
 	      }
@@ -154,7 +157,7 @@ class NativeSearchStrategy extends AbstractSearchStrategy
 	
   protected function producePassOnHttpRequest($node,$request)
   {
-	    $url = $node.$_SERVER['REQUEST_URI'];
+	    $url = 'http://'.$node.$_SERVER['REQUEST_URI'];
 	
       $requestMethods = array(
         'GET' => HttpRequest::METH_GET,

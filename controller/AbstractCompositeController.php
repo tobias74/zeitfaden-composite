@@ -14,6 +14,17 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
       return $uid;
   }
 
+  // this is specific to the composite, has to stay here.
+  protected function getAttachmentUrlByEntityId($entityId)
+  {
+    error_log('is this called Abstract COmpistie COntroller 2487687682364876876');
+    $entityData = $this->getMyEntityDataById($entityId);
+    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
+    return $serveAttachmentUrl;
+  }
+
+
+
   protected function getBrowserLanguage()
   {
     $lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
@@ -135,13 +146,6 @@ abstract class AbstractCompositeController extends AbstractZeitfadenController
   }
 
 
-  protected function getAttachmentUrlByEntityId($entityId)
-  {
-    error_log('is this called Abstract COmpistie COntroller 2487687682364876876');
-    $entityData = $this->getMyEntityDataById($entityId);
-    $serveAttachmentUrl = 'http://'.$entityData['shardUrl'].'/'.$this->controllerPath.'/serveAttachment/'.$this->idName.'/'.$entityId;
-    return $serveAttachmentUrl;
-  }
 
   
   protected function attachLoadBalancedUrls($returnEntities)

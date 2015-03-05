@@ -40,10 +40,8 @@ class ElasticSearchService
 
   protected function getElasticSearchNativeConfiguration()
   {
-    $values = $this->getApplication()->getApplicationIni();
-    
     return array(
-      'host' => $this->getApplication()->getConfig()->getElasticSearchHost()
+      'hosts' => array($this->getApplication()->getConfig()->getElasticSearchHost())
     );
   }
 

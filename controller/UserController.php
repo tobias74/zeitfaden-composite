@@ -5,14 +5,6 @@ class UserController extends AbstractCompositeController
   protected $controllerPath='user';
 	
 
-  protected function getEntityDataByRequest($request)
-  {
-    $userId = $request->getParam('userId',0);
-    $userData = $this->getUserDataById($userId);
-    return $userData;
-
-  }
-
   
   protected function getEntitiesByIds($request)
   {
@@ -24,12 +16,14 @@ class UserController extends AbstractCompositeController
     return $this->getSearchStrategy($request)->getUsersByRequest($request);
   }
 
+
+
   protected function getMyEntityDataById($id)
   {
     return $this->getUserDataById($id);
   }
 
-  protected function getUserDataById($userId)
+  private function getUserDataById($userId)
   {
     $shardData = $this->getShardDataByUserId($userId);
     $url = 'http://'.$shardData['shardUrl'].'/user/getById/userId/'.$userId;
