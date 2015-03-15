@@ -57,7 +57,7 @@ class CompositeServiceFacade
 	  $preparedUrls = array();
 	  foreach ($this->getSubNodes() as $subnode)
 	  {
-	    array_push($preparedUrls, $subnode.'/'.$commandPath);
+	    array_push($preparedUrls, 'http://'.$subnode.'/'.$commandPath);
 
 	  }
 

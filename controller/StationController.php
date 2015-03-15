@@ -1,6 +1,6 @@
 <?php
 
-class StationController extends AbstractCompositeController
+class StationController extends AbstractCompositeEntityController
 {
   protected $idName = 'stationId';
   protected $controllerPath='station';

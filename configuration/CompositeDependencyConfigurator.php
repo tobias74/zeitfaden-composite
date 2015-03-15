@@ -107,6 +107,11 @@ class CompositeDependencyConfigurator
         $depList->addDependency('RedisClientProvider', new SL\ManagedComponentProvider('RedisClient'));
         $depList->addDependency('ReverseGeocoderCacheProvider', new SL\ManagedComponentProvider('ReverseGeocoderCache'));
 		
+
+    $depList = $dm->registerDependencyManagedService(new SL\ManagedService('AppsController'));
+        $depList->addDependency('ApplicationId', new SL\UnmanagedValue($application->getApplicationId()));
+        $depList->addDependency('Profiler', new SL\ManagedComponent('PhpProfiler'));
+        $depList->addDependency('Database', new SL\ManagedComponent('DatabaseProvider'));
 		
 
 		$depList = $dm->registerDependencyManagedService(new SL\ManagedService('ElasticSearchStrategy'));

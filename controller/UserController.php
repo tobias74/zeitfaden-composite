@@ -1,5 +1,5 @@
 <?php 
-class UserController extends AbstractCompositeController
+class UserController extends AbstractCompositeEntityController
 {
   protected $idName = 'userId';
   protected $controllerPath='user';
@@ -170,13 +170,15 @@ class UserController extends AbstractCompositeController
 		$email = $this->_request->getParam('email', '');
 		$password = $this->_request->getParam('password','');
 
-error_log($email);
-error_log(print_r($_POST,true));
+    error_log($email);
+    error_log(print_r($_POST,true));
 
 		$response = $this->getCompositeService()->whereLivesUserByEmail($email);
 		// now we know whre the user live, now we log him into that.
 		// the session will be updated there and be valid here, too.
 
+		error_log('found the user in '.$response['shardUrl']);
+    
 		$this->passCurrentRequestToShardUrl($response['shardUrl']);
 		
     
